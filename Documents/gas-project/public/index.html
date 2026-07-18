@@ -160,8 +160,8 @@
       .bc-header { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
       .bc-icon { font-size: 16px; }
       .bc-title { font-size: 10px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-dim); }
-      .bc-amounts { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
-      .bc-remaining { font-size: 22px; font-weight: 600; line-height: 1; }
+      .bc-amounts { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 8px; }
+      .bc-remaining { font-size: 32px; font-weight: 600; line-height: 1.1; letter-spacing: -1px; }
       .bc-remaining.over { color: var(--red); }
       .budget-card.food .bc-remaining     { color: var(--green); }
       .budget-card.social .bc-remaining   { color: var(--purple); }
@@ -213,7 +213,7 @@
       .macro-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
       .macro-name { font-size: 12px; font-weight: 400; display: flex; align-items: center; gap: 6px; }
       .macro-dot { width: 6px; height: 6px; border-radius: 50%; }
-      .macro-numbers { font-size: 11px; color: var(--text-dim); }
+      .macro-numbers { font-size: 15px; font-weight: 600; color: var(--text); }
       .macro-numbers strong { font-weight: 500; color: var(--text); font-size: 12px; }
       .progress-bg { background: var(--border); height: 3px; border-radius: 2px; overflow: hidden; }
       .progress-fill { height: 100%; width: 0%; border-radius: 2px; }
@@ -236,16 +236,17 @@
       }
 
       /* ── Forms ── */
-      .filter-bar { display: flex; gap: 6px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+      .filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
       .filter-btn {
-        padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
-        font-size: 11px; font-weight: 400; cursor: pointer;
+        padding: 8px 18px; border-radius: 20px; border: 1px solid var(--border);
+        font-size: 12px; font-weight: 500; cursor: pointer;
         background: none; color: var(--text-dim);
+        transition: all 0.15s;
       }
       .filter-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
       .filter-input {
-        padding: 8px 12px; border-radius: var(--radius);
-        border: 1px solid var(--border); font-size: 12px;
+        padding: 10px 14px; border-radius: var(--radius);
+        border: 1px solid var(--border); font-size: 13px;
         font-family: inherit; color: var(--text); background: var(--surface);
         outline: none;
       }
@@ -255,11 +256,11 @@
 
       /* ── Log Buttons ── */
       .log-btn {
-        width: 100%; padding: 10px;
+        width: 100%; padding: 12px;
         background: none; color: var(--text-dim);
         border: 1px dashed var(--border);
         border-radius: var(--radius);
-        font-size: 12px; font-weight: 400;
+        font-size: 13px; font-weight: 500;
         cursor: pointer;
       }
       .log-btn:hover { border-color: var(--text-muted); color: var(--text); }
@@ -276,21 +277,21 @@
 
       .entry-card {
         background: var(--surface); border: 1px solid var(--border);
-        border-radius: var(--radius); padding: 10px 12px; margin-bottom: 6px;
+        border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px;
         display: flex; justify-content: space-between;
-        align-items: flex-start; gap: 8px;
+        align-items: center; gap: 8px;
       }
       .entry-left { flex: 1; min-width: 0; }
-      .entry-name { font-size: 12px; font-weight: 400; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .entry-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .entry-meta { font-size: 10px; color: var(--text-dim); font-weight: 400; }
       .entry-right { text-align: right; flex-shrink: 0; }
-      .entry-value { font-size: 13px; font-weight: 500; color: var(--text); }
+      .entry-value { font-size: 16px; font-weight: 600; color: var(--text); }
       .entry-sub { font-size: 10px; color: var(--text-muted); font-weight: 400; margin-top: 2px; }
 
       .macro-pills { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
-      .macro-pill { font-size: 9px; font-weight: 400; padding: 2px 6px; border-radius: 4px; background: var(--border); color: var(--text-dim); }
+      .macro-pill { font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 4px; background: var(--border); color: var(--text-dim); }
 
-      .cat-badge { display: inline-block; font-size: 9px; font-weight: 400; padding: 2px 6px; border-radius: 4px; background: var(--border); color: var(--text-dim); margin-top: 2px; }
+      .cat-badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 4px; background: var(--border); color: var(--text-dim); margin-top: 2px; }
 
       .day-macro-summary {
         background: var(--surface); border: 1px solid var(--border);
@@ -567,7 +568,7 @@
             <input type="number" class="filter-input" id="food-fat" placeholder="Fat (g)" style="flex:1;" inputmode="numeric">
           </div>
           <input type="text" class="filter-input" id="food-note" placeholder="Note (optional)">
-          <button onclick="submitFoodLog()" style="background:none;color:var(--text);border:1px solid var(--border);padding:10px;border-radius:var(--radius);font-size:12px;font-weight:400;cursor:pointer;">Save Food Log</button>
+          <button onclick="submitFoodLog()" style="background:var(--green);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;">Save Food Log</button>
         </div>
       </div>
       <div id="food-list"><div class="tab-loading">Loading...</div></div>
@@ -602,7 +603,7 @@
             <input type="text" class="filter-input" id="exp-category" placeholder="Category (e.g. Food)" style="flex:1;">
             <input type="text" class="filter-input" id="exp-details" placeholder="Details (optional)" style="flex:1;">
           </div>
-          <button onclick="submitExpenseLog()" style="background:none;color:var(--text);border:1px solid var(--border);padding:10px;border-radius:var(--radius);font-size:12px;font-weight:400;cursor:pointer;">Save Expense</button>
+          <button onclick="submitExpenseLog()" style="background:var(--purple);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;">Save Expense</button>
         </div>
       </div>
       <div id="exp-list"><div class="tab-loading">Loading...</div></div>
@@ -649,7 +650,7 @@
             <input type="text" class="filter-input" id="fit-reps" placeholder="Reps (e.g. 10)" style="flex:1;">
             <input type="text" class="filter-input" id="fit-weight" placeholder="Weight (e.g. 20kg)" style="flex:1;">
           </div>
-          <button onclick="submitWorkoutLog()" style="background:none;color:var(--text);border:1px solid var(--border);padding:10px;border-radius:var(--radius);font-size:12px;font-weight:400;cursor:pointer;">Save Workout</button>
+          <button onclick="submitWorkoutLog()" style="background:var(--green);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;">Save Workout</button>
         </div>
       </div>
 
@@ -661,7 +662,7 @@
         <div style="display:flex;flex-direction:column;gap:8px;">
           <input type="number" class="filter-input" id="fit-body-weight" placeholder="Weight (kg)" style="flex:1;" inputmode="decimal">
           <input type="number" class="filter-input" id="fit-body-height" placeholder="Height (cm, optional)">
-          <button onclick="submitWeightLog()" style="background:none;color:var(--text);border:1px solid var(--border);padding:10px;border-radius:var(--radius);font-size:12px;font-weight:400;cursor:pointer;">Save Weight</button>
+          <button onclick="submitWeightLog()" style="background:var(--blue);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;">Save Weight</button>
         </div>
       </div>
 
@@ -731,7 +732,7 @@
             <input type="text" class="filter-input" id="quest-target" placeholder="Target (e.g. 2000)" style="flex:1;">
             <input type="text" class="filter-input" id="quest-unit" placeholder="Unit (e.g. kcal)" style="flex:1;">
           </div>
-          <button onclick="submitQuest()" style="background:none;color:var(--text);border:1px solid var(--border);padding:10px;border-radius:var(--radius);font-size:12px;font-weight:400;cursor:pointer;">Create Quest</button>
+          <button onclick="submitQuest()" style="background:var(--text);color:var(--bg);border:none;padding:12px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;">Create Quest</button>
         </div>
       </div>
     </div>
