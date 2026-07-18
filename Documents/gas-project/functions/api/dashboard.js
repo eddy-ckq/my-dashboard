@@ -35,13 +35,14 @@ export async function onRequestGet({ env, request }) {
   try {
     const token = await getAccessToken(env);
 
-    const [profileRows, expRows, archiveExpRows, reallocationRow, macroRows, shoppingRows] = await Promise.all([
+    const [profileRows, expRows, archiveExpRows, reallocationRow, macroRows, shoppingRows, goalRows] = await Promise.all([
       sheetValues(token, SHEET_ID, "Profile !C3:C9"),
       sheetValues(token, SHEET_ID, "Expenses!A2:F"),
       sheetValues(token, SHEET_ID, "Archive_Expenses!A2:F"),
       sheetValues(token, SHEET_ID, "Profile !C10:C10"),
       sheetValues(token, SHEET_ID, "Profile !L2:L16"),
       sheetValues(token, SHEET_ID, "Profile !C11:C12"),
+      sheetValues(token, SHEET_ID, "Goals!A2:H"),
     ]);
 
     const allExpRows = [...expRows, ...archiveExpRows];
@@ -107,15 +108,9 @@ export async function onRequestGet({ env, request }) {
     const foodExtraIncome   = 0;
     const socialExtraIncome = extraIncome;
 
-    const dailyFoodAllowance = daysInMonth > 0 ? monthlyFoodBudget / daysInMonth : 0;
-    const daysPassedThisMonth = day - 1;
-    const expectedSpendSoFar = dailyFoodAllowance * daysPassedThisMonth;
-    const actualSpendPastDays = thisMonthFood - todayFood;
-    const totalUnspentPastDays = Math.max(0, expectedSpendSoFar - actualSpendPastDays);
-    const availableToAllocate = Math.max(0, totalUnspentPastDays - foodToSocialReallocation);
-
-    const foodBudgetRemainingTotal = monthlyFoodBudget + foodExtraIncome - thisMonthFood - foodToSocialReallocation;
+    const foodBudgetRemainingTotal = monthlyFoodBudget - thisMonthFood;
     const foodDailyBudget = daysLeft > 0 ? foodBudgetRemainingTotal / daysLeft : foodBudgetRemainingTotal;
+    const availableToAllocate = Math.max(0, foodBudgetRemainingTotal - foodToSocialReallocation);
 
     // Pace tracking — use total budget (base + extra income) so reimbursements are factored in
     const foodBudgetTotalForPace   = monthlyFoodBudget + foodExtraIncome;
@@ -155,7 +150,6 @@ export async function onRequestGet({ env, request }) {
       petrolWeeklyBudget: macroNum(12),
       petrolWeeklyRemaining: macroNum(14),
       unspentFoodPastDays: availableToAllocate,
-      totalUnspentFoodPastDays: totalUnspentPastDays,
       foodToSocialReallocation,
       extraIncome,
       foodMonthlySpend: thisMonthFood,
@@ -164,6 +158,18 @@ export async function onRequestGet({ env, request }) {
       socialMonthlySpend: thisMonthSocial,
       socialPaceExpected,
       socialOnTrack,
+      goals: goalRows.filter(r => r[0]).map(r => ({
+        id: r[0] || '',
+        created: r[1] || '',
+        category: r[2] || '',
+        type: r[3] || '',
+        title: r[4] || '',
+        target: r[5] || '',
+        unit: r[6] || '',
+        status: r[7] || 'Active',
+        todayValue: 0,
+        todayCleared: false,
+      })),
     };
 
     if (env.CACHE) {

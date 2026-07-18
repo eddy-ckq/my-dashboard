@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Widget</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d0d1a;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+      color: #fff;
+      padding: 16px;
+      min-width: 260px;
+      max-height: 100vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.2) transparent;
+    }
+
+    body::-webkit-scrollbar { width: 5px; }
+    body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 5px; }
+
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px;
+    }
+    .header-title {
+      font-size: 14px; font-weight: 800; letter-spacing: 2px;
+      text-transform: uppercase; color: rgba(255,255,255,0.35);
+    }
+    .header-time {
+      font-size: 11px; color: rgba(255,255,255,0.25); font-weight: 600;
+    }
+
+    /* Quest board grid */
+    .quest-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .quest-card {
+      border-radius: 14px;
+      padding: 14px 12px;
+      position: relative;
+      overflow: hidden;
+      min-height: 80px;
+      transition: opacity 0.3s;
+    }
+
+    .quest-card.cleared {
+      opacity: 0.35;
+    }
+
+    .quest-card:not(.cleared) {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    .quest-icon {
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+
+    .quest-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+
+    .quest-value {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .quest-check {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .quest-check.done {
+      background: #55efc4;
+    }
+
+    .quest-check.pending {
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+
+    .quest-check svg {
+      width: 11px;
+      height: 11px;
+    }
+
+    /* Mini progress bar */
+    .quest-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .quest-bar-fill {
+      height: 100%;
+      border-radius: 0 3px 0 0;
+      transition: width 0.5s;
+    }
+
+    /* Stats strip */
+    .stats-strip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stats-num {
+      font-size: 22px;
+      font-weight: 800;
+      color: #55efc4;
+    }
+
+    .stats-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stats-divider {
+      width: 1px;
+      height: 24px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* Budget mini */
+    .budget-mini {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+    }
+
+    .budget-mini-icon {
+      font-size: 16px;
+    }
+
+    .budget-mini-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      flex: 1;
+    }
+
+    .budget-mini-val {
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .budget-mini-val.food { color: #55efc4; }
+    .budget-mini-val.social { color: #a29bfe; }
+    .budget-mini-val.petrol { color: #fdcb6e; }
+
+    /* Macros mini */
+    .macro-mini {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .macro-mini-item {
+      flex: 1;
+      text-align: center;
+    }
+
+    .macro-mini-icon {
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .macro-mini-val {
+      font-size: 13px;
+      font-weight: 800;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .macro-mini-label {
+      font-size: 9px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.3);
+      text-transform: uppercase;
+    }
+
+    /* Empty state */
+    .empty-quests {
+      text-align: center;
+      padding: 30px 10px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .empty-quests .emoji { font-size: 32px; margin-bottom: 8px; }
+
+    .loading {
+      font-size: 14px;
+      color: rgba(255,255,255,0.3);
+      text-align: center;
+      padding: 40px 0;
+    }
+  </style>
+</head>
+<body>
+  <div style="position: absolute; top: 4px; left: 6px; font-size: 8px; color: rgba(255,255,255,0.1); font-weight: 700; z-index: 100;">v4.0</div>
+  <div id="root"><div class="loading">Loading...</div></div>
+
+  <script>
+    function fmt(n) {
+      var v = parseFloat(n);
+      return (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(2);
+    }
+
+    function render(d) {
+      var html = '';
+
+      // Header
+      var now = new Date();
+      var time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var dayNamesLong = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      html += '<div class="header">';
+      html += '<div class="header-title">⚔️ Quests</div>';
+      html += '<div class="header-time">' + dayNames[now.getDay()] + ', ' + dayNamesLong[now.getDay()] + '</div>';
+      html += '</div>';
+
+      // Quest board
+      var dailyGoals = [];
+      if (d.goals) {
+        dailyGoals = d.goals.filter(function(g) {
+          return g.type === 'Daily' && g.status === 'Active';
+        });
+      }
+
+      if (dailyGoals.length === 0) {
+        html += '<div class="empty-quests">';
+        html += '<div class="emoji">🏆</div>';
+        html += '<div>No quests today</div>';
+        html += '</div>';
+      } else {
+        html += '<div class="quest-grid">';
+        var colors = ['#55efc4','#a29bfe','#fdcb6e','#ff7675','#74b9ff','#fd79a8','#00cec9','#e17055'];
+        var icons = {
+          'health': '🍽️', 'calorie': '🔥', 'protein': '🥩',
+          'water': '💧', 'walk': '🚶', 'steps': '👟',
+          'budget': '💰', 'social': '🎉', 'food': '🍱',
+          'petrol': '⛽', 'study': '📚', 'exercise': '💪',
+          'default': '⭐'
+        };
+
+        dailyGoals.forEach(function(g, i) {
+          var color = colors[i % colors.length];
+          var cleared = g.todayCleared;
+          var title = g.title || 'Quest';
+          var icon = icons.default;
+
+          // Pick icon from title
+          var lower = title.toLowerCase();
+          if (lower.includes('calori') || lower.includes('calorie')) icon = icons.calorie;
+          else if (lower.includes('protein')) icon = icons.protein;
+          else if (lower.includes('water')) icon = icons.water;
+          else if (lower.includes('walk') || lower.includes('step')) icon = icons.walk;
+          else if (lower.includes('food') || lower.includes('eat')) icon = icons.food;
+          else if (lower.includes('social')) icon = icons.social;
+          else if (lower.includes('budget') || lower.includes('money') || lower.includes('saver')) icon = icons.budget;
+          else if (lower.includes('petrol') || lower.includes('fuel')) icon = icons.petrol;
+          else if (lower.includes('exercise') || lower.includes('gym') || lower.includes('workout')) icon = icons.exercise;
+          else if (lower.includes('study') || lower.includes('learn') || lower.includes('book')) icon = icons.study;
+          else if (lower.includes('health') || lower.includes('eat') || lower.includes('meal')) icon = icons.health;
+          else if (lower.includes('drink')) icon = icons.water;
+
+          var valDisplay = '';
+          if (g.target && parseFloat(g.target) > 0) {
+            var val = g.todayValue || 0;
+            var target = parseFloat(g.target);
+            var pct = Math.min(val / target * 100, 100);
+            valDisplay = val + ' / ' + g.target + (g.unit ? ' ' + g.unit : '');
+
+            html += '<div class="quest-card ' + (cleared ? 'cleared' : '') + '" style="background:' + color + '22; border: 1px solid ' + color + '44;">';
+            html += '<div class="quest-check ' + (cleared ? 'done' : 'pending') + '">';
+            html += cleared ? '<svg viewBox="0 0 24 24" fill="none" stroke="#0d0d1a" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : '';
+            html += '</div>';
+            html += '<div class="quest-icon">' + icon + '</div>';
+            html += '<div class="quest-title">' + title + '</div>';
+            html += '<div class="quest-value">' + valDisplay + '</div>';
+            html += '<div class="quest-bar"><div class="quest-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>';
+            html += '</div>';
+          } else {
+            html += '<div class="quest-card ' + (cleared ? 'cleared' : '') + '" style="background:' + color + '22; border: 1px solid ' + color + '44;">';
+            html += '<div class="quest-check ' + (cleared ? 'done' : 'pending') + '">';
+            html += cleared ? '<svg viewBox="0 0 24 24" fill="none" stroke="#0d0d1a" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : '';
+            html += '</div>';
+            html += '<div class="quest-icon">' + icon + '</div>';
+            html += '<div class="quest-title">' + title + '</div>';
+            html += '</div>';
+          }
+        });
+        html += '</div>';
+
+        // Stats
+        var clearedCount = dailyGoals.filter(function(g) { return g.todayCleared; }).length;
+        html += '<div class="stats-strip">';
+        html += '<div><div class="stats-num">' + clearedCount + '/' + dailyGoals.length + '</div><div class="stats-label">Cleared</div></div>';
+        html += '<div class="stats-divider"></div>';
+        html += '<div><div class="stats-num" style="color:#a29bfe;">' + (clearedCount === dailyGoals.length ? '🔥' : '💤') + '</div><div class="stats-label">' + (clearedCount === dailyGoals.length ? 'All Done!' : 'Keep Going!') + '</div></div>';
+        html += '</div>';
+      }
+
+      // Budget mini
+      html += '<div style="margin-top:16px;">';
+      html += '<div class="budget-mini">';
+      html += '<div class="budget-mini-icon">🍽️</div>';
+      html += '<div class="budget-mini-label">Food</div>';
+      html += '<div class="budget-mini-val food">' + fmt(d.foodDailyRemaining || 0) + '</div>';
+      html += '</div>';
+      html += '<div class="budget-mini">';
+      html += '<div class="budget-mini-icon">🎉</div>';
+      html += '<div class="budget-mini-label">Social</div>';
+      html += '<div class="budget-mini-val social">' + fmt(d.socialBudget || 0) + '</div>';
+      html += '</div>';
+      html += '<div class="budget-mini">';
+      html += '<div class="budget-mini-icon">⛽</div>';
+      html += '<div class="budget-mini-label">Petrol</div>';
+      html += '<div class="budget-mini-val petrol">' + fmt(d.petrolBudget || 0) + '</div>';
+      html += '</div>';
+      html += '</div>';
+
+      // Macros mini
+      html += '<div class="macro-mini">';
+      html += '<div class="macro-mini-item"><div class="macro-mini-icon">🔥</div><div class="macro-mini-val">' + Math.round(d.caloriesActual) + '</div><div class="macro-mini-label">Cal</div></div>';
+      html += '<div class="macro-mini-item"><div class="macro-mini-icon">🥩</div><div class="macro-mini-val">' + Math.round(d.proteinActual) + '</div><div class="macro-mini-label">Prot</div></div>';
+      html += '<div class="macro-mini-item"><div class="macro-mini-icon">🍞</div><div class="macro-mini-val">' + Math.round(d.carbsActual) + '</div><div class="macro-mini-label">Carb</div></div>';
+      html += '<div class="macro-mini-item"><div class="macro-mini-icon">🧈</div><div class="macro-mini-val">' + Math.round(d.fatActual) + '</div><div class="macro-mini-label">Fat</div></div>';
+      html += '</div>';
+
+      html += '<div class="header-time" style="margin-top:12px;text-align:right;">Updated ' + time + '</div>';
+
+      document.getElementById('root').innerHTML = html;
+    }
+
+    function load(bust) {
+      fetch('/api/dashboard?refresh=' + (bust ? '1' : '0'))
+        .then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function(data) {
+          if (data && !data.error) {
+            render(data);
+          } else {
+            document.getElementById('root').innerHTML = '<div class="loading">Error: ' + (data && data.error ? data.error : 'No data') + '</div>';
+          }
+        })
+        .catch(function(e) {
+          document.getElementById('root').innerHTML = '<div class="loading">Error: ' + e.message + '</div>';
+        });
+    }
+
+    load(true);
+    setInterval(function() { load(false); }, 5 * 60 * 1000);
+  </script>
+</body>
+</html>
