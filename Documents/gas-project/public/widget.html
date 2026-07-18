@@ -11,7 +11,7 @@
       background: #0d0d1a;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
       color: #fff;
-      padding: 16px;
+      padding: 0;
       min-width: 260px;
       max-height: 100vh;
       overflow-y: auto;
@@ -22,19 +22,123 @@
     body::-webkit-scrollbar { width: 5px; }
     body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 5px; }
 
-    .header {
+    /* Tab bar */
+    .tab-bar {
+      display: flex;
+      background: rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 0;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 2px solid #a29bfe;
+    }
+
+    /* Page container */
+    .page { display: none; padding: 16px; }
+    .page.active { display: block; }
+
+    /* ===== OVERVIEW STYLES ===== */
+    .section-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 16px;
+    }
+
+    .section { margin-bottom: 28px; }
+    .divider { height: 1px; background: rgba(255,255,255,0.08); margin-bottom: 28px; }
+
+    .budget-item { margin-bottom: 18px; }
+    .budget-label { font-size: 13px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+    .budget-label.food   { color: rgba(85,239,196,0.8); }
+    .budget-label.social { color: rgba(162,155,254,0.8); }
+    .budget-label.petrol { color: rgba(253,203,110,0.8); }
+
+    .budget-amount {
+      font-size: 36px; font-weight: 800; line-height: 1.1; margin-bottom: 6px; letter-spacing: -0.5px;
+    }
+    .budget-amount.food   { color: #55efc4; }
+    .budget-amount.social { color: #a29bfe; }
+    .budget-amount.petrol { color: #fdcb6e; }
+    .budget-amount.over   { color: #ff7675; }
+
+    .budget-sub { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 10px; }
+    .budget-sub strong { font-weight: 800; }
+
+    .pace-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 700; padding: 4px 10px;
+      border-radius: 20px; margin-top: 8px;
+    }
+    .pace-badge.on-track  { background: rgba(85,239,196,0.15); color: #55efc4; border: 1px solid rgba(85,239,196,0.3); }
+    .pace-badge.over-pace { background: rgba(255,118,117,0.2); color: #ff9f9f; border: 1px solid rgba(255,118,117,0.4); }
+
+    .bar-bg { background: rgba(255,255,255,0.1); border-radius: 6px; height: 8px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 6px; transition: width 1s ease; }
+    .bar-fill.food   { background: #55efc4; }
+    .bar-fill.social { background: #a29bfe; }
+    .bar-fill.petrol { background: #fdcb6e; }
+    .bar-fill.over   { background: #ff7675; }
+
+    .daily-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .daily-cell { background: rgba(255,255,255,0.06); border-radius: 12px; padding: 12px 10px; }
+    .daily-cell-label { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 6px; }
+    .daily-cell-value { font-size: 18px; font-weight: 800; color: #55efc4; }
+    .daily-cell-value.over    { color: #ff7675; }
+    .daily-cell-value.neutral { color: rgba(255,255,255,0.7); }
+
+    .macro-row { margin-bottom: 16px; }
+    .macro-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .macro-name { font-size: 13px; font-weight: 800; letter-spacing: 0.8px; display: flex; align-items: center; gap: 8px; }
+    .macro-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .macro-nums { font-size: 13px; color: rgba(255,255,255,0.4); }
+    .macro-nums strong { color: rgba(255,255,255,0.85); font-weight: 800; }
+
+    .borrow-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .borrow-label { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.4); }
+    .borrow-value { font-size: 18px; font-weight: 800; color: #fdcb6e; }
+    .borrow-value.green  { color: #55efc4; }
+    .borrow-value.purple { color: #a29bfe; }
+    .borrow-value.neutral { color: rgba(255,255,255,0.6); }
+
+    .timestamp { font-size: 12px; color: rgba(255,255,255,0.2); text-align: right; margin-top: 10px; }
+    .loading { font-size: 16px; color: rgba(255,255,255,0.3); text-align: center; padding: 60px 0; }
+
+    /* ===== QUEST STYLES ===== */
+    .quest-header {
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 14px;
     }
-    .header-title {
+    .quest-title {
       font-size: 14px; font-weight: 800; letter-spacing: 2px;
       text-transform: uppercase; color: rgba(255,255,255,0.35);
     }
-    .header-time {
+    .quest-time {
       font-size: 11px; color: rgba(255,255,255,0.25); font-weight: 600;
     }
 
-    /* Quest board grid */
     .quest-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -51,188 +155,67 @@
       transition: opacity 0.3s;
     }
 
-    .quest-card.cleared {
-      opacity: 0.35;
-    }
+    .quest-card.cleared { opacity: 0.35; }
 
-    .quest-card:not(.cleared) {
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    }
-
-    .quest-icon {
-      font-size: 22px;
-      margin-bottom: 8px;
-    }
-
-    .quest-title {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      margin-bottom: 6px;
-      line-height: 1.2;
-    }
-
-    .quest-value {
-      font-size: 10px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.5);
-    }
+    .quest-icon { font-size: 22px; margin-bottom: 8px; }
+    .quest-label { font-size: 11px; font-weight: 700; letter-spacing: 0.3px; margin-bottom: 6px; line-height: 1.2; }
+    .quest-value { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); }
 
     .quest-check {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 18px;
-      height: 18px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute; top: 8px; right: 8px;
+      width: 18px; height: 18px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
     }
+    .quest-check.done { background: #55efc4; }
+    .quest-check.pending { border: 2px solid rgba(255,255,255,0.2); }
+    .quest-check svg { width: 11px; height: 11px; }
 
-    .quest-check.done {
-      background: #55efc4;
-    }
-
-    .quest-check.pending {
-      border: 2px solid rgba(255,255,255,0.2);
-    }
-
-    .quest-check svg {
-      width: 11px;
-      height: 11px;
-    }
-
-    /* Mini progress bar */
     .quest-bar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: rgba(0,0,0,0.2);
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 3px; background: rgba(0,0,0,0.2);
     }
+    .quest-bar-fill { height: 100%; border-radius: 0 3px 0 0; transition: width 0.5s; }
 
-    .quest-bar-fill {
-      height: 100%;
-      border-radius: 0 3px 0 0;
-      transition: width 0.5s;
-    }
-
-    /* Stats strip */
     .stats-strip {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 14px;
-      background: rgba(255,255,255,0.06);
-      border-radius: 12px;
-      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; background: rgba(255,255,255,0.06);
+      border-radius: 12px; margin-bottom: 16px;
     }
+    .stats-num { font-size: 22px; font-weight: 800; color: #55efc4; }
+    .stats-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stats-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.1); }
 
-    .stats-num {
-      font-size: 22px;
-      font-weight: 800;
-      color: #55efc4;
-    }
+    .empty-quests { text-align: center; padding: 30px 10px; color: rgba(255,255,255,0.3); }
+    .empty-quests .emoji { font-size: 32px; margin-bottom: 8px; }
 
-    .stats-label {
-      font-size: 10px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.4);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .stats-divider {
-      width: 1px;
-      height: 24px;
-      background: rgba(255,255,255,0.1);
-    }
-
-    /* Budget mini */
-    .budget-mini {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      margin-bottom: 6px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 10px;
-    }
-
-    .budget-mini-icon {
-      font-size: 16px;
-    }
-
-    .budget-mini-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.5);
-      flex: 1;
-    }
-
-    .budget-mini-val {
-      font-size: 13px;
-      font-weight: 800;
-    }
-
+    .budget-mini { display: flex; align-items: center; gap: 8px; padding: 8px 12px; margin-bottom: 6px; background: rgba(255,255,255,0.04); border-radius: 10px; }
+    .budget-mini-icon { font-size: 16px; }
+    .budget-mini-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.5); flex: 1; }
+    .budget-mini-val { font-size: 13px; font-weight: 800; }
     .budget-mini-val.food { color: #55efc4; }
     .budget-mini-val.social { color: #a29bfe; }
     .budget-mini-val.petrol { color: #fdcb6e; }
 
-    /* Macros mini */
-    .macro-mini {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .macro-mini-item {
-      flex: 1;
-      text-align: center;
-    }
-
-    .macro-mini-icon {
-      font-size: 14px;
-      margin-bottom: 2px;
-    }
-
-    .macro-mini-val {
-      font-size: 13px;
-      font-weight: 800;
-      color: rgba(255,255,255,0.85);
-    }
-
-    .macro-mini-label {
-      font-size: 9px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.3);
-      text-transform: uppercase;
-    }
-
-    /* Empty state */
-    .empty-quests {
-      text-align: center;
-      padding: 30px 10px;
-      color: rgba(255,255,255,0.3);
-    }
-
-    .empty-quests .emoji { font-size: 32px; margin-bottom: 8px; }
-
-    .loading {
-      font-size: 14px;
-      color: rgba(255,255,255,0.3);
-      text-align: center;
-      padding: 40px 0;
-    }
+    .macro-mini { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .macro-mini-item { flex: 1; text-align: center; }
+    .macro-mini-icon { font-size: 14px; margin-bottom: 2px; }
+    .macro-mini-val { font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.85); }
+    .macro-mini-label { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.3); text-transform: uppercase; }
   </style>
 </head>
 <body>
   <div style="position: absolute; top: 4px; left: 6px; font-size: 8px; color: rgba(255,255,255,0.1); font-weight: 700; z-index: 100;">v4.0</div>
-  <div id="root"><div class="loading">Loading...</div></div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+    <button class="tab-btn" onclick="switchTab('quests')">Quests</button>
+  </div>
+
+  <!-- OVERVIEW PAGE -->
+  <div id="page-overview" class="page active"><div class="loading">Loading...</div></div>
+
+  <!-- QUESTS PAGE -->
+  <div id="page-quests" class="page"></div>
 
   <script>
     function fmt(n) {
@@ -240,26 +223,196 @@
       return (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(2);
     }
 
-    function render(d) {
-      var html = '';
+    function pctCalc(spent, base) {
+      return base > 0 ? Math.min(Math.abs(spent) / base * 100, 100) : 0;
+    }
 
-      // Header
+    function barCls(cls, spent, base) {
+      var p = pctCalc(spent, base);
+      var over = spent > base;
+      return '<div class="bar-bg"><div class="bar-fill ' + (over ? 'over' : cls) + '" style="width:' + p + '%"></div></div>';
+    }
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+      document.getElementById('page-' + name).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function renderOverview(d) {
+      var html = '';
+      var now = new Date();
+      var time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      var foodTotal = d.foodBudgetTotal || d.foodBudgetBase;
+      var socialTotal = (d.socialBudgetTotal || d.socialBudgetBase) + (d.foodToSocialReallocation || 0);
+      var foodSpent = foodTotal - (d.foodBudgetRemaining + (d.foodToSocialReallocation||0));
+      var socialSpent = socialTotal - d.socialBudget;
+      var petrolSpent = d.petrolBudgetBase - d.petrolBudget;
+      var dailyLeft = parseFloat(d.foodDailyRemaining);
+      var calLeft = Math.max(0, Math.round(d.caloriesGoal - d.caloriesActual));
+
+      var daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+      var dailyAllowance = d.foodBudgetBase / daysInMonth;
+      var daysPassed = new Date().getDate() - 1;
+      var available = d.unspentFoodPastDays || 0;
+      var alreadyMoved = d.foodToSocialReallocation || 0;
+      var totalUnspent = d.totalUnspentFoodPastDays || 0;
+
+      var encouragements = [
+        "Keep it up! 💪", "You're killing it! 🔥", "Solid discipline! ✨",
+        "Looking good! 👌", "Stay the course! 🚀", "Nice work! 🎯",
+        "Budget boss! 💰", "On point! ⚡"
+      ];
+      function nudge() { return encouragements[Math.floor(Math.random() * encouragements.length)]; }
+
+      function paceBadge(onTrack, spent, expected) {
+        if (onTrack === undefined) return '';
+        if (onTrack) {
+          var saved = expected - spent;
+          return '<div style="margin-top:8px;"><span class="pace-badge on-track">✓ Under budget · ' + fmt(saved) + ' under expected</span></div>';
+        } else {
+          var over = spent - expected;
+          return '<div style="margin-top:8px;"><span class="pace-badge over-pace">⚠ Overspending · ' + fmt(over) + ' more than expected</span></div>';
+        }
+      }
+
+      function extraBreakdown(base, extra, total, color) {
+        if (!extra || extra <= 0) return '';
+        return '<div style="margin-top:6px;font-size:12px;color:rgba(255,255,255,0.5);">'
+          + fmt(base) + ' base'
+          + ' <span style="color:' + color + ';font-weight:800;">+ ' + fmt(extra) + ' extra</span>'
+          + ' = <strong style="color:rgba(255,255,255,0.9);">' + fmt(total) + ' total</strong>'
+          + '</div>';
+      }
+
+      function subLine(remaining, total, color, enc) {
+        var over = remaining < 0;
+        if (over) return '<div class="budget-sub"><strong style="color:#ff9f9f;font-size:15px;">Over by ' + fmt(Math.abs(remaining)) + '</strong></div>';
+        return '<div class="budget-sub"><strong style="color:' + color + ';font-size:15px;">' + fmt(remaining) + ' left</strong>'
+          + ' <span style="color:rgba(255,255,255,0.35);font-size:12px;">of ' + fmt(total) + ' · ' + enc + '</span></div>';
+      }
+
+      // ── BUDGETS ──
+      html += '<div class="section">';
+      html += '<div class="section-title">Monthly Budgets</div>';
+
+      // Food
+      html += '<div class="budget-item">';
+      html += '<div class="budget-label food">Food</div>';
+      html += '<div class="budget-amount food ' + (d.foodBudgetRemaining < 0 ? 'over' : '') + '">' + fmt(foodSpent < 0 ? 0 : foodSpent) + '</div>';
+      html += '<div class="budget-sub" style="color:rgba(255,255,255,0.4);">of ' + fmt(foodTotal) + ' spent</div>';
+      html += extraBreakdown(d.foodBudgetBase, d.foodExtraIncome, foodTotal, '#55efc4');
+      html += subLine(d.foodBudgetRemaining, foodTotal, '#55efc4', nudge());
+      html += barCls('food', foodSpent, foodTotal);
+      html += paceBadge(d.foodOnTrack, d.foodMonthlySpend, d.foodPaceExpected);
+      html += '</div>';
+
+      // Daily breakdown
+      html += '<div class="daily-grid">';
+      html += '<div class="daily-cell"><div class="daily-cell-label">Allowance</div><div class="daily-cell-value neutral">' + fmt(d.foodDailyBudget) + '</div></div>';
+      html += '<div class="daily-cell"><div class="daily-cell-label">Spent</div><div class="daily-cell-value neutral">' + fmt(d.foodTodaySpend) + '</div></div>';
+      html += '<div class="daily-cell"><div class="daily-cell-label">Left</div><div class="daily-cell-value ' + (dailyLeft < 0 ? 'over' : '') + '">' + fmt(dailyLeft) + '</div></div>';
+      html += '</div>';
+      html += '</div>';
+
+      html += '<div class="divider"></div>';
+
+      // Social
+      html += '<div class="section">';
+      html += '<div class="budget-item">';
+      html += '<div class="budget-label social">Social</div>';
+      html += '<div class="budget-amount social ' + (d.socialBudget < 0 ? 'over' : '') + '">' + fmt(socialSpent < 0 ? 0 : socialSpent) + '</div>';
+      html += '<div class="budget-sub" style="color:rgba(255,255,255,0.4);">of ' + fmt(socialTotal) + ' spent</div>';
+      html += extraBreakdown(d.socialBudgetBase, d.socialExtraIncome, d.socialBudgetTotal || d.socialBudgetBase, '#a29bfe');
+      if (alreadyMoved > 0) {
+        html += '<div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">+ ' + fmt(alreadyMoved) + ' borrowed from food</div>';
+      }
+      html += subLine(d.socialBudget, socialTotal, '#a29bfe', nudge());
+      html += barCls('social', socialSpent, socialTotal);
+      html += paceBadge(d.socialOnTrack, d.socialMonthlySpend, d.socialPaceExpected);
+      html += '</div>';
+      html += '</div>';
+
+      html += '<div class="divider"></div>';
+
+      // Petrol
+      html += '<div class="section">';
+      html += '<div class="budget-item">';
+      html += '<div class="budget-label petrol">Petrol</div>';
+      html += '<div class="budget-amount petrol ' + (d.petrolBudget < 0 ? 'over' : '') + '">' + fmt(petrolSpent < 0 ? 0 : petrolSpent) + '</div>';
+      html += '<div class="budget-sub">spent ' + fmt(petrolSpent) + ' of ' + fmt(d.petrolBudgetBase) + '</div>';
+      html += barCls('petrol', petrolSpent, d.petrolBudgetBase);
+      html += '</div>';
+      html += '</div>';
+
+      html += '<div class="divider"></div>';
+
+      // ── MACROS ──
+      html += '<div class="section">';
+      html += '<div class="section-title">Today\'s Macros</div>';
+
+      var macros = [
+        { label: 'Calories', dot: '#4e9af1', actual: Math.round(d.caloriesActual), goal: Math.round(d.caloriesGoal), unit: 'kcal', barColor: '#4e9af1' },
+        { label: 'Protein',  dot: '#e17055', actual: Math.round(d.proteinActual),  goal: Math.round(d.proteinGoal),  unit: 'g',    barColor: '#e17055' },
+        { label: 'Carbs',    dot: '#ffd32a', actual: Math.round(d.carbsActual),    goal: Math.round(d.carbsGoal),    unit: 'g',    barColor: '#ffd32a' },
+        { label: 'Fat',      dot: '#00d2d3', actual: Math.round(d.fatActual),      goal: Math.round(d.fatGoal),      unit: 'g',    barColor: '#00d2d3' },
+      ];
+
+      macros.forEach(function(m) {
+        var p = m.goal > 0 ? Math.min(m.actual / m.goal * 100, 100) : 0;
+        html += '<div class="macro-row">';
+        html += '<div class="macro-header">';
+        html += '<span class="macro-name"><span class="macro-dot" style="background:' + m.dot + '"></span>' + m.label + '</span>';
+        html += '<span class="macro-nums"><strong>' + m.actual + '</strong> / ' + m.goal + ' ' + m.unit + '</span>';
+        html += '</div>';
+        html += '<div class="bar-bg"><div class="bar-fill" style="width:' + p + '%;background:' + m.barColor + '"></div></div>';
+        html += '</div>';
+      });
+
+      html += '</div>';
+
+      html += '<div class="divider"></div>';
+
+      // ── BORROW OVER ──
+      html += '<div class="section">';
+      html += '<div class="section-title">Borrow Over</div>';
+      html += '<div class="borrow-row"><span class="borrow-label">Daily allowance</span><span class="borrow-value neutral">' + fmt(dailyAllowance) + '/day</span></div>';
+      html += '<div class="borrow-row"><span class="borrow-label">Unspent (days 1–' + daysPassed + ')</span><span class="borrow-value">' + fmt(totalUnspent) + '</span></div>';
+      html += '<div class="borrow-row"><span class="borrow-label">Already moved</span><span class="borrow-value green">' + fmt(alreadyMoved) + '</span></div>';
+      html += '<div class="borrow-row"><span class="borrow-label">Available to move</span><span class="borrow-value purple">' + fmt(available) + '</span></div>';
+
+      if (alreadyMoved > 0) {
+        html += '<div style="margin-top: 10px; padding: 10px; background: rgba(85,239,196,0.1); border-radius: 8px; font-size: 11px; color: #55efc4; font-weight: 600; text-align: center; border: 1px solid rgba(85,239,196,0.2);">';
+        html += '✓ ' + fmt(alreadyMoved) + ' already moved to Social 🎉';
+        html += '</div>';
+      }
+
+      html += '</div>';
+      html += '<div class="timestamp">Updated ' + time + '</div>';
+
+      document.getElementById('page-overview').innerHTML = html;
+    }
+
+    function renderQuests(d) {
+      var html = '';
       var now = new Date();
       var time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
       var dayNamesLong = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-      html += '<div class="header">';
-      html += '<div class="header-title">⚔️ Quests</div>';
-      html += '<div class="header-time">' + dayNames[now.getDay()] + ', ' + dayNamesLong[now.getDay()] + '</div>';
-      html += '</div>';
 
-      // Quest board
       var dailyGoals = [];
       if (d.goals) {
         dailyGoals = d.goals.filter(function(g) {
           return g.type === 'Daily' && g.status === 'Active';
         });
       }
+
+      html += '<div class="quest-header">';
+      html += '<div class="quest-title">⚔️ Quests</div>';
+      html += '<div class="quest-time">' + dayNames[now.getDay()] + ', ' + dayNamesLong[now.getDay()] + '</div>';
+      html += '</div>';
 
       if (dailyGoals.length === 0) {
         html += '<div class="empty-quests">';
@@ -282,9 +435,8 @@
           var cleared = g.todayCleared;
           var title = g.title || 'Quest';
           var icon = icons.default;
-
-          // Pick icon from title
           var lower = title.toLowerCase();
+
           if (lower.includes('calori') || lower.includes('calorie')) icon = icons.calorie;
           else if (lower.includes('protein')) icon = icons.protein;
           else if (lower.includes('water')) icon = icons.water;
@@ -299,30 +451,28 @@
           else if (lower.includes('drink')) icon = icons.water;
 
           var valDisplay = '';
+          var showBar = false;
           if (g.target && parseFloat(g.target) > 0) {
             var val = g.todayValue || 0;
             var target = parseFloat(g.target);
-            var pct = Math.min(val / target * 100, 100);
+            var pctVal = Math.min(val / target * 100, 100);
             valDisplay = val + ' / ' + g.target + (g.unit ? ' ' + g.unit : '');
-
-            html += '<div class="quest-card ' + (cleared ? 'cleared' : '') + '" style="background:' + color + '22; border: 1px solid ' + color + '44;">';
-            html += '<div class="quest-check ' + (cleared ? 'done' : 'pending') + '">';
-            html += cleared ? '<svg viewBox="0 0 24 24" fill="none" stroke="#0d0d1a" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : '';
-            html += '</div>';
-            html += '<div class="quest-icon">' + icon + '</div>';
-            html += '<div class="quest-title">' + title + '</div>';
-            html += '<div class="quest-value">' + valDisplay + '</div>';
-            html += '<div class="quest-bar"><div class="quest-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>';
-            html += '</div>';
-          } else {
-            html += '<div class="quest-card ' + (cleared ? 'cleared' : '') + '" style="background:' + color + '22; border: 1px solid ' + color + '44;">';
-            html += '<div class="quest-check ' + (cleared ? 'done' : 'pending') + '">';
-            html += cleared ? '<svg viewBox="0 0 24 24" fill="none" stroke="#0d0d1a" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : '';
-            html += '</div>';
-            html += '<div class="quest-icon">' + icon + '</div>';
-            html += '<div class="quest-title">' + title + '</div>';
-            html += '</div>';
+            showBar = true;
           }
+
+          html += '<div class="quest-card ' + (cleared ? 'cleared' : '') + '" style="background:' + color + '22; border: 1px solid ' + color + '44;">';
+          html += '<div class="quest-check ' + (cleared ? 'done' : 'pending') + '">';
+          html += cleared ? '<svg viewBox="0 0 24 24" fill="none" stroke="#0d0d1a" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : '';
+          html += '</div>';
+          html += '<div class="quest-icon">' + icon + '</div>';
+          html += '<div class="quest-label">' + title + '</div>';
+          if (valDisplay) {
+            html += '<div class="quest-value">' + valDisplay + '</div>';
+          }
+          if (showBar) {
+            html += '<div class="quest-bar"><div class="quest-bar-fill" style="width:' + pctVal + '%;background:' + color + '"></div></div>';
+          }
+          html += '</div>';
         });
         html += '</div>';
 
@@ -333,38 +483,37 @@
         html += '<div class="stats-divider"></div>';
         html += '<div><div class="stats-num" style="color:#a29bfe;">' + (clearedCount === dailyGoals.length ? '🔥' : '💤') + '</div><div class="stats-label">' + (clearedCount === dailyGoals.length ? 'All Done!' : 'Keep Going!') + '</div></div>';
         html += '</div>';
+
+        // Budget mini
+        html += '<div style="margin-top:16px;">';
+        html += '<div class="budget-mini">';
+        html += '<div class="budget-mini-icon">🍽️</div>';
+        html += '<div class="budget-mini-label">Food</div>';
+        html += '<div class="budget-mini-val food">' + fmt(d.foodDailyRemaining || 0) + '</div>';
+        html += '</div>';
+        html += '<div class="budget-mini">';
+        html += '<div class="budget-mini-icon">🎉</div>';
+        html += '<div class="budget-mini-label">Social</div>';
+        html += '<div class="budget-mini-val social">' + fmt(d.socialBudget || 0) + '</div>';
+        html += '</div>';
+        html += '<div class="budget-mini">';
+        html += '<div class="budget-mini-icon">⛽</div>';
+        html += '<div class="budget-mini-label">Petrol</div>';
+        html += '<div class="budget-mini-val petrol">' + fmt(d.petrolBudget || 0) + '</div>';
+        html += '</div>';
+        html += '</div>';
+
+        // Macros mini
+        html += '<div class="macro-mini">';
+        html += '<div class="macro-mini-item"><div class="macro-mini-icon">🔥</div><div class="macro-mini-val">' + Math.round(d.caloriesActual) + '</div><div class="macro-mini-label">Cal</div></div>';
+        html += '<div class="macro-mini-item"><div class="macro-mini-icon">🥩</div><div class="macro-mini-val">' + Math.round(d.proteinActual) + '</div><div class="macro-mini-label">Prot</div></div>';
+        html += '<div class="macro-mini-item"><div class="macro-mini-icon">🍞</div><div class="macro-mini-val">' + Math.round(d.carbsActual) + '</div><div class="macro-mini-label">Carb</div></div>';
+        html += '<div class="macro-mini-item"><div class="macro-mini-icon">🧈</div><div class="macro-mini-val">' + Math.round(d.fatActual) + '</div><div class="macro-mini-label">Fat</div></div>';
+        html += '</div>';
       }
 
-      // Budget mini
-      html += '<div style="margin-top:16px;">';
-      html += '<div class="budget-mini">';
-      html += '<div class="budget-mini-icon">🍽️</div>';
-      html += '<div class="budget-mini-label">Food</div>';
-      html += '<div class="budget-mini-val food">' + fmt(d.foodDailyRemaining || 0) + '</div>';
-      html += '</div>';
-      html += '<div class="budget-mini">';
-      html += '<div class="budget-mini-icon">🎉</div>';
-      html += '<div class="budget-mini-label">Social</div>';
-      html += '<div class="budget-mini-val social">' + fmt(d.socialBudget || 0) + '</div>';
-      html += '</div>';
-      html += '<div class="budget-mini">';
-      html += '<div class="budget-mini-icon">⛽</div>';
-      html += '<div class="budget-mini-label">Petrol</div>';
-      html += '<div class="budget-mini-val petrol">' + fmt(d.petrolBudget || 0) + '</div>';
-      html += '</div>';
-      html += '</div>';
-
-      // Macros mini
-      html += '<div class="macro-mini">';
-      html += '<div class="macro-mini-item"><div class="macro-mini-icon">🔥</div><div class="macro-mini-val">' + Math.round(d.caloriesActual) + '</div><div class="macro-mini-label">Cal</div></div>';
-      html += '<div class="macro-mini-item"><div class="macro-mini-icon">🥩</div><div class="macro-mini-val">' + Math.round(d.proteinActual) + '</div><div class="macro-mini-label">Prot</div></div>';
-      html += '<div class="macro-mini-item"><div class="macro-mini-icon">🍞</div><div class="macro-mini-val">' + Math.round(d.carbsActual) + '</div><div class="macro-mini-label">Carb</div></div>';
-      html += '<div class="macro-mini-item"><div class="macro-mini-icon">🧈</div><div class="macro-mini-val">' + Math.round(d.fatActual) + '</div><div class="macro-mini-label">Fat</div></div>';
-      html += '</div>';
-
-      html += '<div class="header-time" style="margin-top:12px;text-align:right;">Updated ' + time + '</div>';
-
-      document.getElementById('root').innerHTML = html;
+      html += '<div class="quest-time" style="margin-top:12px;text-align:right;">Updated ' + time + '</div>';
+      document.getElementById('page-quests').innerHTML = html;
     }
 
     function load(bust) {
@@ -375,13 +524,16 @@
         })
         .then(function(data) {
           if (data && !data.error) {
-            render(data);
+            renderOverview(data);
+            renderQuests(data);
           } else {
-            document.getElementById('root').innerHTML = '<div class="loading">Error: ' + (data && data.error ? data.error : 'No data') + '</div>';
+            document.getElementById('page-overview').innerHTML = '<div class="loading">Error: ' + (data && data.error ? data.error : 'No data') + '</div>';
+            document.getElementById('page-quests').innerHTML = '<div class="loading">Error: ' + (data && data.error ? data.error : 'No data') + '</div>';
           }
         })
         .catch(function(e) {
-          document.getElementById('root').innerHTML = '<div class="loading">Error: ' + e.message + '</div>';
+          document.getElementById('page-overview').innerHTML = '<div class="loading">Error: ' + e.message + '</div>';
+          document.getElementById('page-quests').innerHTML = '<div class="loading">Error: ' + e.message + '</div>';
         });
     }
 
