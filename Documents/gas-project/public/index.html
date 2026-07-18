@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="description" content="Personal food, budget, and expense tracker">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>My Dashboard</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+      :root {
+        --primary: #6c63ff;
+        --primary-light: #ede9ff;
+        --bg: #f0f2f8;
+        --card-bg: #ffffff;
+        --text-main: #1a1d2e;
+        --text-sub: #8b8fa8;
+        --green: #00c896;
+        --green-light: #e0faf4;
+        --red: #ff5e6c;
+        --red-light: #ffe8ea;
+        --blue: #4e9af1;
+        --orange: #ff9f43;
+        --teal: #00d2d3;
+        --yellow: #ffd32a;
+        --radius: 20px;
+        --shadow: 0 4px 24px rgba(0,0,0,0.06);
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--bg);
+        color: var(--text-main);
+        min-height: 100vh;
+        padding: 24px 16px 40px;
+      }
+
+      /* ── Google Login Screen ── */
+      #login-screen {
+        position: fixed; inset: 0; z-index: 300;
+        background: var(--bg);
+        display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        gap: 20px; padding: 32px;
+      }
+      #login-screen h1 {
+        font-size: 26px; font-weight: 800;
+        background: linear-gradient(135deg, var(--primary), #a78bfa);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text; letter-spacing: -0.5px; text-align: center;
+      }
+      #login-screen p {
+        font-size: 13px; color: var(--text-sub); font-weight: 500; text-align: center;
+      }
+      #login-error {
+        font-size: 13px; font-weight: 600; color: var(--red);
+        background: var(--red-light); padding: 10px 18px; border-radius: 12px;
+        display: none; text-align: center;
+      }
+      #app { display: none; }
+
+      #loading-overlay {
+        position: fixed; inset: 0;
+        background: rgba(240,242,248,0.95);
+        display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        z-index: 200; gap: 16px;
+      }
+      .spinner {
+        width: 40px; height: 40px;
+        border: 4px solid var(--primary-light);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .loading-text { font-size: 13px; font-weight: 600; color: var(--text-sub); letter-spacing: 1.5px; text-transform: uppercase; }
+
+      .header { text-align: center; margin-bottom: 20px; }
+      .header-eyebrow {
+        font-size: 11px; font-weight: 600; letter-spacing: 2px;
+        text-transform: uppercase; color: var(--text-sub); margin-bottom: 6px;
+      }
+      .header h1 {
+        font-size: 28px; font-weight: 800;
+        background: linear-gradient(135deg, var(--primary), #a78bfa);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text; letter-spacing: -0.5px;
+      }
+      .last-updated {
+        display: inline-flex; align-items: center; gap: 5px;
+        margin-top: 8px; font-size: 11px; font-weight: 500;
+        color: var(--text-sub); background: white;
+        padding: 4px 12px; border-radius: 20px; box-shadow: var(--shadow);
+      }
+      .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+      @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+      .tab-nav {
+        display: flex; gap: 6px;
+        background: white; border-radius: var(--radius);
+        padding: 6px; box-shadow: var(--shadow); margin-bottom: 24px;
+      }
+      .tab-btn {
+        flex: 1; padding: 10px 6px; border: none; border-radius: 14px;
+        font-size: 12px; font-weight: 700; letter-spacing: 0.3px;
+        cursor: pointer; background: transparent; color: var(--text-sub); transition: all 0.2s;
+      }
+      .tab-btn.active {
+        background: linear-gradient(135deg, var(--primary), #a78bfa);
+        color: white; box-shadow: 0 4px 12px rgba(108,99,255,0.3);
+      }
+
+      .tab-page { display: none; }
+      .tab-page.active { display: block; }
+
+      .section-label {
+        font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+        text-transform: uppercase; color: var(--text-sub);
+        margin-bottom: 12px; padding-left: 4px;
+      }
+
+      .budget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+      .budget-card {
+        background: var(--card-bg); border-radius: var(--radius);
+        padding: 16px; box-shadow: var(--shadow);
+        position: relative; overflow: hidden;
+      }
+      .budget-card.full { grid-column: span 2; }
+      .budget-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+      .budget-card.food::before     { background: linear-gradient(90deg, var(--green), #00e5b0); }
+      .budget-card.social::before   { background: linear-gradient(90deg, var(--primary), #a78bfa); }
+      .budget-card.petrol::before   { background: linear-gradient(90deg, var(--orange), #ffbe76); }
+      .budget-card.shopping::before { background: linear-gradient(90deg, #fd79a8, #e84393); }
+
+      .bc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+      .bc-icon { font-size: 18px; }
+      .bc-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-sub); }
+      .bc-amounts { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+      .bc-remaining { font-size: 20px; font-weight: 800; line-height: 1; }
+      .bc-remaining.over { color: var(--red); }
+      .budget-card.food .bc-remaining     { color: var(--green); }
+      .budget-card.social .bc-remaining   { color: var(--primary); }
+      .budget-card.petrol .bc-remaining   { color: var(--orange); }
+      .budget-card.shopping .bc-remaining { color: #e84393; }
+      .bc-of { font-size: 11px; color: var(--text-sub); font-weight: 500; }
+      .bc-bar-bg { background: #f0f2f8; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+      .bc-bar-fill { height: 100%; border-radius: 3px; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+      .budget-card.food .bc-bar-fill     { background: linear-gradient(90deg, var(--green), #00e5b0); }
+      .budget-card.social .bc-bar-fill   { background: linear-gradient(90deg, var(--primary), #a78bfa); }
+      .budget-card.petrol .bc-bar-fill   { background: linear-gradient(90deg, var(--orange), #ffbe76); }
+      .budget-card.shopping .bc-bar-fill { background: linear-gradient(90deg, #fd79a8, #e84393); }
+      .bc-bar-fill.over                  { background: var(--red); }
+      .bc-spent { font-size: 11px; color: var(--text-sub); font-weight: 500; }
+
+      .pace-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 10px; font-weight: 700; padding: 3px 8px;
+        border-radius: 20px; margin-top: 8px;
+      }
+      .pace-badge.on-track  { background: #e0faf4; color: #00c896; }
+      .pace-badge.over-pace { background: #ffe8ea; color: #ff5e6c; }
+      .bc-spent strong { color: var(--text-main); }
+
+      .bc-stacked-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+      .bc-stacked-seg { height: 100%; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+      .social-breakdown { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f2f8; }
+      .social-breakdown.open { display: block; }
+      .sbd-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+      .sbd-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; flex-shrink: 0; }
+      .sbd-label { font-size: 12px; font-weight: 600; color: var(--text-sub); display: flex; align-items: center; }
+      .sbd-amount { font-size: 12px; font-weight: 700; color: var(--text-main); }
+      .bc-tap-hint { font-size: 10px; color: var(--text-sub); font-weight: 500; margin-top: 4px; text-align: right; }
+
+      .food-daily-breakdown { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f2f8; }
+      .food-daily-title { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-sub); margin-bottom: 10px; }
+      .food-daily-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+      .food-daily-label { font-size: 11px; font-weight: 500; color: var(--text-sub); }
+      .food-daily-value { font-size: 12px; font-weight: 700; color: var(--text-main); }
+      .food-daily-value.positive { color: var(--green); }
+      .food-daily-value.negative { color: var(--red); }
+      .food-daily-bar-bg { background: #f0f2f8; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 8px; }
+      .food-daily-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--green), #00e5b0); transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+
+      .card { background: var(--card-bg); border-radius: var(--radius); padding: 22px 20px; box-shadow: var(--shadow); margin-bottom: 24px; }
+      .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+      .card-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+      .card-title-icon { width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, #ff6b6b, #feca57); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+      .macro-row { margin-bottom: 16px; }
+      .macro-row:last-child { margin-bottom: 0; }
+      .macro-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+      .macro-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+      .macro-dot { width: 8px; height: 8px; border-radius: 50%; }
+      .macro-numbers { font-size: 12px; color: var(--text-sub); }
+      .macro-numbers strong { font-weight: 700; color: var(--text-main); font-size: 13px; }
+      .progress-bg { background: #f0f2f8; height: 8px; border-radius: 4px; overflow: hidden; }
+      .progress-fill { height: 100%; width: 0%; border-radius: 4px; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+      .cal-bar  { background: linear-gradient(90deg, #4e9af1, #74b9ff); }
+      .pro-bar  { background: linear-gradient(90deg, #e17055, #fd79a8); }
+      .carb-bar { background: linear-gradient(90deg, #ffd32a, #ffbe76); }
+      .fat-bar  { background: linear-gradient(90deg, #00d2d3, #81ecec); }
+      .macro-pct { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
+      .cal-pct  { background: #dbeeff; color: #4e9af1; }
+      .pro-pct  { background: #ffe4e8; color: #e17055; }
+      .carb-pct { background: #fff8e1; color: #f39c12; }
+      .fat-pct  { background: #e0fffe; color: #00b8b9; }
+
+      .refresh-btn {
+        width: 100%; padding: 18px;
+        background: linear-gradient(135deg, var(--primary), #a78bfa);
+        color: white; border: none; border-radius: var(--radius);
+        font-size: 15px; font-weight: 700; letter-spacing: 0.5px;
+        cursor: pointer; box-shadow: 0 8px 24px rgba(108,99,255,0.35);
+        transition: transform 0.15s, box-shadow 0.15s;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+      }
+      .refresh-btn:active { transform: scale(0.98); box-shadow: 0 4px 12px rgba(108,99,255,0.25); }
+
+      .filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+      .filter-btn {
+        padding: 7px 16px; border-radius: 20px; border: none;
+        font-size: 12px; font-weight: 600; cursor: pointer;
+        background: white; color: var(--text-sub); box-shadow: var(--shadow); transition: all 0.2s;
+      }
+      .filter-btn.active { background: var(--primary); color: white; }
+      .filter-input {
+        padding: 7px 12px; border-radius: 20px;
+        border: 1.5px solid #e8eaf0; font-size: 12px;
+        font-family: inherit; color: var(--text-main); background: white; outline: none;
+      }
+      .filter-input:focus { border-color: var(--primary); }
+
+      .day-group { margin-bottom: 20px; }
+      .day-header {
+        font-size: 12px; font-weight: 700; letter-spacing: 1px;
+        text-transform: uppercase; color: var(--text-sub);
+        margin-bottom: 8px; padding-left: 4px;
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .day-total { font-size: 11px; font-weight: 700; background: white; padding: 3px 10px; border-radius: 20px; box-shadow: var(--shadow); color: var(--text-main); }
+
+      .entry-card {
+        background: white; border-radius: 14px; padding: 12px 14px; margin-bottom: 8px;
+        box-shadow: var(--shadow); display: flex; justify-content: space-between;
+        align-items: flex-start; gap: 8px;
+      }
+      .entry-left { flex: 1; min-width: 0; }
+      .entry-name { font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .entry-meta { font-size: 11px; color: var(--text-sub); font-weight: 500; }
+      .entry-right { text-align: right; flex-shrink: 0; }
+      .entry-value { font-size: 14px; font-weight: 800; color: var(--text-main); }
+      .entry-sub { font-size: 10px; color: var(--text-sub); font-weight: 500; margin-top: 2px; }
+
+      .macro-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+      .macro-pill { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+      .pill-cal  { background: #dbeeff; color: #4e9af1; }
+      .pill-pro  { background: #ffe4e8; color: #e17055; }
+      .pill-carb { background: #fff8e1; color: #f39c12; }
+      .pill-fat  { background: #e0fffe; color: #00b8b9; }
+
+      .cat-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: var(--primary-light); color: var(--primary); margin-top: 3px; }
+
+      .day-macro-summary {
+        background: white; border-radius: 14px; padding: 10px 14px;
+        margin-bottom: 8px; box-shadow: var(--shadow);
+        display: flex; gap: 8px; flex-wrap: wrap;
+      }
+      .dms-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 10px; }
+
+      .empty-state { text-align: center; padding: 40px 20px; color: var(--text-sub); font-size: 13px; font-weight: 500; }
+      .tab-loading { text-align: center; padding: 40px; color: var(--text-sub); font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+    </style>
+  </head>
+  <body>
+  <div style="position:fixed;bottom:6px;right:8px;font-size:9px;color:rgba(0,0,0,0.15);font-weight:700;z-index:9999;pointer-events:none;">v4.2</div>
+
+    <div id="app">
+
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text">Syncing data...</div>
+    </div>
+
+    <div class="header">
+      <div style="position: absolute; top: 12px; left: 16px; font-size: 11px; color: var(--text-sub); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+        <span id="user-email-header"></span>
+        <a href="/api/auth/logout" style="color: var(--primary); text-decoration: none; border: 1.5px solid var(--primary-light); padding: 4px 10px; border-radius: 12px; background: white; box-shadow: var(--shadow);">Logout</a>
+      </div>
+      <div class="header-eyebrow">Personal Dashboard</div>
+      <h1>My Lifestyle</h1>
+      <button onclick="refreshAll()" style="position:absolute;top:16px;right:16px;background:transparent;border:none;font-size:24px;cursor:pointer;padding:8px;" title="Refresh">↻</button>
+      <div class="last-updated">
+        <span class="dot"></span>
+        <span id="lastUpdated">Updating...</span>
+      </div>
+      <a href="https://docs.google.com/spreadsheets/d/1b52-JwOtAj-n3BHOMTMr7_RJIAcayp7O9Og7CoAa8KQ/edit" target="_blank" style="display:inline-block;margin-top:8px;padding:6px 12px;background:#4f46e5;color:white;text-decoration:none;border-radius:8px;font-size:12px;font-weight:600;">📊 Open Sheet</a>
+    </div>
+
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('food')">Food Log</button>
+      <button class="tab-btn" onclick="switchTab('expenses')">Expenses</button>
+      <button class="tab-btn" onclick="switchTab('fitness')">Fitness</button>
+      <button class="tab-btn" onclick="switchTab('goals')">Quests</button>
+    </div>
+
+    <!-- DASHBOARD TAB -->
+    <div id="tab-dashboard" class="tab-page active">
+      <div class="section-label">Monthly Budgets</div>
+      <div class="budget-grid">
+
+        <!-- Food: full width -->
+        <div class="budget-card food full">
+          <div class="bc-header">
+            <span class="bc-icon">🍽️</span>
+            <span class="bc-title">Food</span>
+          </div>
+          <div class="bc-amounts">
+            <span class="bc-remaining" id="foodBudget">—</span>
+            <span class="bc-of" id="foodBudgetMonthLabel">of —</span>
+          </div>
+          <div class="bc-bar-bg"><div class="bc-bar-fill" id="foodBudgetBar" style="width:0%"></div></div>
+          <div class="bc-spent" id="foodBudgetSpent"> </div>
+          <div id="foodExtraBreakdown" style="margin-top:6px;"></div>
+          <div id="foodPaceBadge"></div>
+          <div class="food-daily-breakdown">
+            <div class="food-daily-title">Today</div>
+            <div class="food-daily-row">
+              <span class="food-daily-label">Daily allowance</span>
+              <span class="food-daily-value" id="foodDailyBudget">—</span>
+            </div>
+            <div class="food-daily-row">
+              <span class="food-daily-label">Spent today</span>
+              <span class="food-daily-value" id="foodTodaySpend">—</span>
+            </div>
+            <div class="food-daily-row">
+              <span class="food-daily-label">Left today</span>
+              <span class="food-daily-value" id="foodDailyRemaining">—</span>
+            </div>
+            <div class="food-daily-bar-bg"><div class="food-daily-bar-fill" id="foodDailyBar" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <!-- Social -->
+        <div class="budget-card social" onclick="toggleSocialBreakdown()" style="cursor:pointer;">
+          <div class="bc-header">
+            <span class="bc-icon">🎉</span>
+            <span class="bc-title">Social</span>
+          </div>
+          <div class="bc-amounts">
+            <span class="bc-remaining" id="socialBudget">—</span>
+            <span class="bc-of" id="socialBudgetOf">of —</span>
+          </div>
+          <div class="bc-stacked-bar" id="socialStackedBar"></div>
+          <div class="bc-spent" id="socialBudgetSpent"> </div>
+          <div id="socialExtraBreakdown" style="margin-top:6px;"></div>
+          <div id="socialPaceBadge"></div>
+          <div class="bc-tap-hint">Tap to see breakdown ▾</div>
+          <div class="social-breakdown" id="socialBreakdown"></div>
+        </div>
+
+        <!-- Petrol -->
+        <div class="budget-card petrol">
+          <div class="bc-header">
+            <span class="bc-icon">⛽</span>
+            <span class="bc-title">Petrol</span>
+          </div>
+          <div class="bc-amounts">
+            <span class="bc-remaining" id="petrolBudget">—</span>
+            <span class="bc-of" id="petrolBudgetOf">of —</span>
+          </div>
+          <div class="bc-bar-bg"><div class="bc-bar-fill" id="petrolBudgetBar" style="width:0%"></div></div>
+          <div class="bc-spent" id="petrolBudgetSpent"> </div>
+        </div>
+
+      </div>
+
+      <!-- Move Budget section -->
+      <div style="margin-bottom:24px;">
+        <div class="section-label">Move Budget</div>
+        <div class="card" style="padding:16px 18px;">
+          <div style="font-size:12px;color:var(--text-sub);margin-bottom:14px;line-height:1.6;">
+            Remaining food budget minus what's already been moved to Social = the amount you can transfer.
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:12px;font-weight:600;color:var(--text-sub);">Food budget remaining</span>
+            <span style="font-size:16px;font-weight:800;color:var(--green);" id="borrowFoodRemaining">$0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span style="font-size:12px;font-weight:600;color:var(--text-sub);">Already moved to Social</span>
+            <span style="font-size:14px;font-weight:700;color:var(--orange);" id="borrowAlreadyMoved">$0.00</span>
+          </div>
+          <div style="border-top:1px solid #f0f2f8;padding-top:10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span style="font-size:13px;font-weight:700;color:var(--text-main);">Available to move</span>
+            <span style="font-size:18px;font-weight:800;color:var(--primary);" id="unspentAmount">$0.00</span>
+          </div>
+          <div id="borrow-buttons" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button onclick="reallocateTo('social')" style="flex:1;background:linear-gradient(135deg,var(--primary),#a78bfa);color:white;border:none;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Move to Social 🎉</button>
+          </div>
+          <div id="borrow-done-msg" style="display:none;font-size:12px;color:var(--green);font-weight:600;text-align:center;padding:8px 0;"></div>
+        </div>
+      </div>
+
+      <div class="section-label">Today's Macros</div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon">🔥</div>
+            Daily Nutrition
+          </div>
+        </div>
+        <div class="macro-row">
+          <div class="macro-meta">
+            <span class="macro-name"><span class="macro-dot" style="background:#4e9af1"></span>Calories<span class="macro-pct cal-pct" id="calPct">0%</span></span>
+            <span class="macro-numbers"><strong id="calActual">0</strong> / <span id="calGoal">0</span> kcal</span>
+          </div>
+          <div class="progress-bg"><div id="calBar" class="progress-fill cal-bar"></div></div>
+        </div>
+        <div class="macro-row">
+          <div class="macro-meta">
+            <span class="macro-name"><span class="macro-dot" style="background:#e17055"></span>Protein<span class="macro-pct pro-pct" id="proPct">0%</span></span>
+            <span class="macro-numbers"><strong id="proActual">0</strong> / <span id="proGoal">0</span> g</span>
+          </div>
+          <div class="progress-bg"><div id="proBar" class="progress-fill pro-bar"></div></div>
+        </div>
+        <div class="macro-row">
+          <div class="macro-meta">
+            <span class="macro-name"><span class="macro-dot" style="background:#ffd32a"></span>Carbs<span class="macro-pct carb-pct" id="carbPct">0%</span></span>
+            <span class="macro-numbers"><strong id="carbActual">0</strong> / <span id="carbGoal">0</span> g</span>
+          </div>
+          <div class="progress-bg"><div id="carbBar" class="progress-fill carb-bar"></div></div>
+        </div>
+        <div class="macro-row">
+          <div class="macro-meta">
+            <span class="macro-name"><span class="macro-dot" style="background:#00d2d3"></span>Fat<span class="macro-pct fat-pct" id="fatPct">0%</span></span>
+            <span class="macro-numbers"><strong id="fatActual">0</strong> / <span id="fatGoal">0</span> g</span>
+          </div>
+          <div class="progress-bg"><div id="fatBar" class="progress-fill fat-bar"></div></div>
+        </div>
+      </div>
+
+      <button class="refresh-btn" onclick="refreshAll()" style="display:none;">↻ Refresh Stats</button>
+    </div>
+
+    <!-- FOOD TAB -->
+    <div id="tab-food" class="tab-page">
+      <div class="filter-bar">
+        <button class="filter-btn" id="food-filter-day" onclick="setFoodFilter('day')">By Day</button>
+        <button class="filter-btn active" id="food-filter-month" onclick="setFoodFilter('month')">By Month</button>
+        <input type="date" class="filter-input" id="food-date-picker" style="display:none" onchange="renderFood()">
+        <input type="month" class="filter-input" id="food-month-picker" onchange="renderFood()">
+      </div>
+      <button onclick="document.getElementById('food-log-form').style.display='block';document.getElementById('food-log-form').scrollIntoView({behavior:'smooth'})" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--green),#00e5b0);color:white;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;">+ Log Food</button>
+      <div id="food-log-form" style="display:none;margin-bottom:16px;" class="card">
+        <div class="card-header">
+          <div class="card-title">🍽️ Log Food</div>
+          <button onclick="document.getElementById('food-log-form').style.display='none'" style="background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--text-sub);">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input type="text" class="filter-input" id="food-item" placeholder="Item name (e.g. Nasi Lemak)">
+          <div style="display:flex;gap:8px;">
+            <input type="number" class="filter-input" id="food-calories" placeholder="Calories" style="flex:1;" inputmode="numeric">
+            <select class="filter-input" id="food-type" style="flex:1;">
+              <option value="Meal">Meal</option>
+              <option value="Snack">Snack</option>
+              <option value="Drink">Drink</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <input type="number" class="filter-input" id="food-protein" placeholder="Protein (g)" style="flex:1;" inputmode="numeric">
+            <input type="number" class="filter-input" id="food-carbs" placeholder="Carbs (g)" style="flex:1;" inputmode="numeric">
+            <input type="number" class="filter-input" id="food-fat" placeholder="Fat (g)" style="flex:1;" inputmode="numeric">
+          </div>
+          <input type="text" class="filter-input" id="food-note" placeholder="Note (optional)">
+          <button onclick="submitFoodLog()" style="background:linear-gradient(135deg,var(--green),#00e5b0);color:white;border:none;padding:12px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">Save Food Log</button>
+        </div>
+      </div>
+      <div id="food-list"><div class="tab-loading">Loading...</div></div>
+    </div>
+
+    <!-- EXPENSES TAB -->
+    <div id="tab-expenses" class="tab-page">
+      <div class="filter-bar">
+        <button class="filter-btn" id="exp-filter-day" onclick="setExpFilter('day')">By Day</button>
+        <button class="filter-btn active" id="exp-filter-month" onclick="setExpFilter('month')">By Month</button>
+        <input type="date" class="filter-input" id="exp-date-picker" style="display:none" onchange="renderExpenses()">
+        <input type="month" class="filter-input" id="exp-month-picker" onchange="renderExpenses()">
+      </div>
+      <button onclick="document.getElementById('exp-log-form').style.display='block';document.getElementById('exp-log-form').scrollIntoView({behavior:'smooth'})" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--primary),#a78bfa);color:white;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;">+ Log Expense</button>
+      <div id="exp-log-form" style="display:none;margin-bottom:16px;" class="card">
+        <div class="card-header">
+          <div class="card-title">💰 Log Expense</div>
+          <button onclick="document.getElementById('exp-log-form').style.display='none'" style="background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--text-sub);">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input type="text" class="filter-input" id="exp-item" placeholder="Item name (e.g. Coffee)">
+          <div style="display:flex;gap:8px;">
+            <input type="number" class="filter-input" id="exp-amount" placeholder="Amount ($)" style="flex:1;" inputmode="decimal">
+            <select class="filter-input" id="exp-payment" style="flex:1;">
+              <option value="DBS">DBS</option>
+              <option value="PayNow">PayNow</option>
+              <option value="Cash">Cash</option>
+              <option value="Mastercard">Mastercard</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="filter-input" id="exp-category" placeholder="Category (e.g. Food)" style="flex:1;">
+            <input type="text" class="filter-input" id="exp-details" placeholder="Details (optional)" style="flex:1;">
+          </div>
+          <button onclick="submitExpenseLog()" style="background:linear-gradient(135deg,var(--primary),#a78bfa);color:white;border:none;padding:12px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">Save Expense</button>
+        </div>
+      </div>
+      <div id="exp-list"><div class="tab-loading">Loading...</div></div>
+    </div>
+
+    <!-- FITNESS TAB -->
+    <div id="tab-fitness" class="tab-page">
+      <div class="section-label">Body Composition</div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header" style="margin-bottom:12px;">
+          <div class="card-title">
+            <div class="card-title-icon" style="background:linear-gradient(135deg, #10ac84, #1dd1a1)">⚖️</div>
+            Latest Weigh-In
+          </div>
+          <div id="fit-body-date" style="font-size:11px;color:var(--text-sub);font-weight:600;"></div>
+        </div>
+        <div style="display:flex; justify-content:space-around; align-items:center;">
+          <div style="text-align:center;">
+            <div style="font-size:11px;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Weight</div>
+            <div style="font-size:24px;font-weight:800;color:var(--text-main);"><span id="fit-weight">—</span> <span style="font-size:14px;color:var(--text-sub);">kg</span></div>
+          </div>
+          <div style="width:1px; height:40px; background:#e8eaf0;"></div>
+          <div style="text-align:center;">
+            <div style="font-size:11px;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Height</div>
+            <div style="font-size:24px;font-weight:800;color:var(--text-main);"><span id="fit-height">—</span> <span style="font-size:14px;color:var(--text-sub);">cm</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button onclick="document.getElementById('fit-workout-form').style.display='block';document.getElementById('fit-workout-form').scrollIntoView({behavior:'smooth'})" style="flex:1;padding:12px;background:linear-gradient(135deg,#10ac84,#1dd1a1);color:white;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;">+ Log Workout</button>
+        <button onclick="document.getElementById('fit-weight-form').style.display='block';document.getElementById('fit-weight-form').scrollIntoView({behavior:'smooth'})" style="flex:1;padding:12px;background:linear-gradient(135deg,#4e9af1,#74b9ff);color:white;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;">+ Log Weight</button>
+      </div>
+
+      <div id="fit-workout-form" style="display:none;margin-bottom:16px;" class="card">
+        <div class="card-header">
+          <div class="card-title">🏋️ Log Workout</div>
+          <button onclick="document.getElementById('fit-workout-form').style.display='none'" style="background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--text-sub);">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input type="text" class="filter-input" id="fit-exercise" placeholder="Exercise (e.g. Bench Press)">
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="filter-input" id="fit-sets" placeholder="Sets (e.g. 3)" style="flex:1;">
+            <input type="text" class="filter-input" id="fit-reps" placeholder="Reps (e.g. 10)" style="flex:1;">
+            <input type="text" class="filter-input" id="fit-weight" placeholder="Weight (e.g. 20kg)" style="flex:1;">
+          </div>
+          <button onclick="submitWorkoutLog()" style="background:linear-gradient(135deg,#10ac84,#1dd1a1);color:white;border:none;padding:12px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">Save Workout</button>
+        </div>
+      </div>
+
+      <div id="fit-weight-form" style="display:none;margin-bottom:16px;" class="card">
+        <div class="card-header">
+          <div class="card-title">⚖️ Log Weight</div>
+          <button onclick="document.getElementById('fit-weight-form').style.display='none'" style="background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--text-sub);">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input type="number" class="filter-input" id="fit-body-weight" placeholder="Weight (kg)" style="flex:1;" inputmode="decimal">
+          <input type="number" class="filter-input" id="fit-body-height" placeholder="Height (cm, optional)">
+          <button onclick="submitWeightLog()" style="background:linear-gradient(135deg,#4e9af1,#74b9ff);color:white;border:none;padding:12px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">Save Weight</button>
+        </div>
+      </div>
+
+      <div class="filter-bar" style="margin-top:24px;">
+        <button class="filter-btn active" id="fit-filter-log" onclick="setFitFilter('log')">Workout Log</button>
+        <button class="filter-btn" id="fit-filter-routine" onclick="setFitFilter('routine')">Routine (PPL)</button>
+      </div>
+
+      <div id="fit-list-log">
+        <div class="tab-loading">Loading...</div>
+      </div>
+
+      <div id="fit-list-routine" style="display:none;">
+        <div class="tab-loading">Loading...</div>
+      </div>
+    </div>
+
+    <!-- GOALS TAB — Daily Quests Board -->
+    <div id="tab-goals" class="tab-page">
+      <div class="section-label">Daily Quests</div>
+      <div id="quest-board" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;"></div>
+      <div id="quest-empty" style="display:none;text-align:center;padding:40px;color:var(--text-sub);">
+        <div style="font-size:40px;margin-bottom:12px;">🏆</div>
+        <div style="font-size:14px;font-weight:600;">All quests cleared!</div>
+        <div style="font-size:12px;margin-top:4px;">Come back tomorrow for new quests</div>
+      </div>
+      <div id="quest-stats" style="display:none;margin-bottom:24px;" class="card">
+        <div style="text-align:center;">
+          <div style="font-size:12px;color:var(--text-sub);font-weight:600;margin-bottom:8px;">TODAY'S PROGRESS</div>
+          <div style="font-size:36px;font-weight:800;color:var(--green);" id="quest-cleared-count">0</div>
+          <div style="font-size:14px;color:var(--text-sub);">quests cleared</div>
+          <div style="margin-top:12px;height:8px;background:#f0f2f8;border-radius:4px;overflow:hidden;">
+            <div id="quest-progress-bar" style="height:100%;background:linear-gradient(90deg,var(--green),#00e5b0);width:0%;transition:width 0.5s;border-radius:4px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="section-label">Quest Board</div>
+      <div id="quest-board-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+      <div id="quest-board-empty" style="display:none;text-align:center;padding:40px;color:var(--text-sub);">
+        <div style="font-size:40px;margin-bottom:12px;">📜</div>
+        <div style="font-size:14px;font-weight:600;">No quests yet</div>
+        <button onclick="document.getElementById('quest-create-form').style.display='block';document.getElementById('quest-create-form').scrollIntoView({behavior:'smooth'})" style="margin-top:12px;padding:10px 20px;background:linear-gradient(135deg,var(--primary),#a78bfa);color:white;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;">+ Create Quest</button>
+      </div>
+      <div id="quest-create-form" style="display:none;margin-bottom:16px;" class="card">
+        <div class="card-header">
+          <div class="card-title">⚔️ New Quest</div>
+          <button onclick="document.getElementById('quest-create-form').style.display='none'" style="background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--text-sub);">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input type="text" class="filter-input" id="quest-title" placeholder="Quest title (e.g. Hit Calorie Target)">
+          <div style="display:flex;gap:8px;">
+            <select class="filter-input" id="quest-type" style="flex:1;">
+              <option value="Daily">Daily</option>
+              <option value="Milestone">Milestone</option>
+              <option value="Long-term">Long-term</option>
+            </select>
+            <select class="filter-input" id="quest-category" style="flex:1;">
+              <option value="Health">Health</option>
+              <option value="Finance">Finance</option>
+              <option value="Learning">Learning</option>
+              <option value="Side Project">Side Project</option>
+              <option value="Relationship">Relationship</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="filter-input" id="quest-target" placeholder="Target (e.g. 2000)" style="flex:1;">
+            <input type="text" class="filter-input" id="quest-unit" placeholder="Unit (e.g. kcal)" style="flex:1;">
+          </div>
+          <button onclick="submitQuest()" style="background:linear-gradient(135deg,var(--primary),#a78bfa);color:white;border:none;padding:12px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">Create Quest</button>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- /#app -->
+
+    <script>
+      // ── Auth ──────────────────────────────────────────────────────────────
+      function checkAuth() {
+        fetch('/api/auth/me')
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.user) {
+              document.getElementById('user-email-header').textContent = data.user;
+              document.getElementById('app').style.display = 'block';
+              loadDashboard();
+            } else {
+              window.location.href = '/login.html';
+            }
+          })
+          .catch(function() {
+            window.location.href = '/login.html';
+          });
+      }
+
+      window.addEventListener('load', checkAuth);
+
+      // ── App ───────────────────────────────────────────────────────────────
+      var _foodData = null;
+      var _expData  = null;
+      var _fitData  = null;
+      var _foodFilter = 'month';
+      var _expFilter  = 'month';
+      var _fitFilter  = 'log';
+      var _isEditingRoutine = false;
+
+      function switchTab(tab) {
+        document.querySelectorAll('.tab-page').forEach(function(p){ p.classList.remove('active'); });
+        document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+        document.getElementById('tab-' + tab).classList.add('active');
+        var btns = document.querySelectorAll('.tab-btn');
+        var idx = ['dashboard','food','expenses','fitness'].indexOf(tab);
+        if (idx >= 0) btns[idx].classList.add('active');
+        if (tab === 'food' && !_foodData) loadFood();
+        if (tab === 'expenses' && !_expData) loadExpenses();
+        if (tab === 'fitness' && !_fitData) loadFitness();
+        if (tab === 'goals' && !_questData) loadQuests();
+      }
+
+      function fmt(num) {
+        return '$' + parseFloat(num).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      function setBar(barId, pctId, actual, goal) {
+        var pct = goal > 0 ? Math.min((actual / goal) * 100, 100) : 0;
+        document.getElementById(barId).style.width = pct + '%';
+        document.getElementById(pctId).textContent = Math.round(pct) + '%';
+      }
+      function todayStr() {
+        var d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      }
+      function thisMonthStr() {
+        var d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      }
+      function fmtDateLabel(dateStr) {
+        var d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+      function fmtMonthLabel(monthStr) {
+        var d = new Date(monthStr + '-01T00:00:00');
+        return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+      }
+      function groupBy(arr, keyFn) {
+        var map = {}, keys = [];
+        arr.forEach(function(item) {
+          var k = keyFn(item);
+          if (!map[k]) { map[k] = []; keys.push(k); }
+          map[k].push(item);
+        });
+        return { map: map, keys: keys };
+      }
+      function esc(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
+
+      function setBudgetCard(ids, remaining, base, borrowed) {
+        var spent = base - remaining;
+        var over = remaining < 0;
+        var pct = base > 0 ? Math.min(Math.abs(spent) / base * 100, 100) : 0;
+
+        // Big number = spent
+        var remEl = document.getElementById(ids.remaining);
+        remEl.textContent = fmt(spent < 0 ? 0 : spent);
+        remEl.className = 'bc-remaining' + (over ? ' over' : '');
+
+        // "of $X" label
+        document.getElementById(ids.of).textContent = 'of ' + fmt(base) + ' spent';
+
+        var barEl = document.getElementById(ids.bar);
+        barEl.style.width = pct + '%';
+        if (over) barEl.classList.add('over'); else barEl.classList.remove('over');
+
+        // Sub-line = remaining
+        var encouragements = [
+          "Keep it up! 💪", "You're killing it! 🔥", "Solid discipline! ✨",
+          "Looking good! 👌", "Stay the course! 🚀", "Nice work! 🎯",
+          "Budget boss! 💰", "On point! ⚡"
+        ];
+        var nudge = encouragements[Math.floor(Math.random() * encouragements.length)];
+        var spentLine = over
+          ? '<strong style="color:var(--red)">Over by ' + fmt(Math.abs(remaining)) + '</strong>'
+          : '<strong style="color:var(--green)">' + fmt(remaining) + ' left</strong> of ' + fmt(base)
+            + ' &nbsp;<span style="color:var(--text-sub);font-size:11px;font-weight:600;">' + nudge + '</span>';
+        if (borrowed > 0) {
+          spentLine += ' <span style="color:var(--green);font-size:10px;font-weight:700;">+' + fmt(borrowed) + ' borrowed</span>';
+        }
+        document.getElementById(ids.spent).innerHTML = spentLine;
+      }
+
+      function loadDashboard(bust) {
+        document.getElementById('loading-overlay').style.display = 'flex';
+        fetch('/api/dashboard' + (bust ? '?refresh=1' : ''))
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (!data || data.error) { document.getElementById('loading-overlay').style.display = 'none'; return; }
+            window._dashboardData = data;
+
+            setBudgetCard({remaining:'foodBudget', of:'foodBudgetMonthLabel', bar:'foodBudgetBar', spent:'foodBudgetSpent'}, data.foodBudgetRemaining, data.foodBudgetTotal || data.foodBudgetBase, 0);
+            // Extra income breakdown for food
+            var foodExtraEl = document.getElementById('foodExtraBreakdown');
+            if (foodExtraEl) {
+              if ((data.foodExtraIncome || 0) > 0) {
+                foodExtraEl.innerHTML = '<span style="font-size:11px;color:var(--text-sub);font-weight:500;">'
+                  + fmt(data.foodBudgetBase) + ' base'
+                  + ' <span style="color:var(--green);font-weight:700;">+ ' + fmt(data.foodExtraIncome) + ' extra</span>'
+                  + ' = <strong style="color:var(--text-main)">' + fmt(data.foodBudgetTotal) + ' total</strong>'
+                  + '</span>';
+              } else {
+                foodExtraEl.innerHTML = '';
+              }
+            }
+            setBudgetCard({remaining:'petrolBudget', of:'petrolBudgetOf', bar:'petrolBudgetBar', spent:'petrolBudgetSpent'}, data.petrolBudget, data.petrolBudgetBase, 0);
+
+            // Pace badges — on track vs over pace
+            function setPaceBadge(elId, onTrack, spent, expected) {
+              var el = document.getElementById(elId);
+              if (!el) return;
+              if (onTrack) {
+                var saved = expected - spent;
+                el.innerHTML = '<span class="pace-badge on-track">✓ Under budget · ' + fmt(saved) + ' under expected</span>';
+              } else {
+                var over = spent - expected;
+                el.innerHTML = '<span class="pace-badge over-pace">⚠ Overspending · ' + fmt(over) + ' more than expected</span>';
+              }
+            }
+            setPaceBadge('foodPaceBadge',   data.foodOnTrack,   data.foodMonthlySpend,   data.foodPaceExpected);
+            setPaceBadge('socialPaceBadge', data.socialOnTrack, data.socialMonthlySpend, data.socialPaceExpected);
+
+            var socEl = document.getElementById('socialBudget');
+            var socOver = data.socialBudget < 0;
+            var socEffectiveBase = (data.socialBudgetTotal || data.socialBudgetBase) + (data.foodToSocialReallocation || 0);
+            var socSpent = socEffectiveBase - data.socialBudget;
+            socEl.textContent = fmt(socSpent < 0 ? 0 : socSpent);
+            socEl.className = 'bc-remaining' + (socOver ? ' over' : '');
+            document.getElementById('socialBudgetOf').textContent = 'of ' + fmt(socEffectiveBase) + ' spent';
+            // Extra income breakdown for social
+            var socialExtraEl = document.getElementById('socialExtraBreakdown');
+            if (socialExtraEl) {
+              if ((data.socialExtraIncome || 0) > 0) {
+                var socBorrowedNote = data.foodToSocialReallocation > 0
+                  ? ' <span style="color:var(--green);font-weight:700;">+ ' + fmt(data.foodToSocialReallocation) + ' borrowed</span>' : '';
+                socialExtraEl.innerHTML = '<span style="font-size:11px;color:var(--text-sub);font-weight:500;">'
+                  + fmt(data.socialBudgetBase) + ' base'
+                  + ' <span style="color:var(--primary);font-weight:700;">+ ' + fmt(data.socialExtraIncome) + ' extra</span>'
+                  + socBorrowedNote
+                  + ' = <strong style="color:var(--text-main)">' + fmt(socEffectiveBase) + ' total</strong>'
+                  + '</span>';
+              } else {
+                socialExtraEl.innerHTML = '';
+              }
+            }
+            var socEncouragements = [
+              "Keep it up! 💪", "You're killing it! 🔥", "Solid discipline! ✨",
+              "Looking good! 👌", "Stay the course! 🚀", "Nice work! 🎯",
+              "Budget boss! 💰", "On point! ⚡"
+            ];
+            var socNudge = socEncouragements[Math.floor(Math.random() * socEncouragements.length)];
+            var socSpentLine = socOver
+              ? '<strong style="color:var(--red)">Over by ' + fmt(Math.abs(data.socialBudget)) + '</strong>'
+              : '<strong style="color:var(--primary)">' + fmt(data.socialBudget) + ' left</strong> of ' + fmt(socEffectiveBase)
+                + ' &nbsp;<span style="color:var(--text-sub);font-size:11px;font-weight:600;">' + socNudge + '</span>';
+            if (data.foodToSocialReallocation > 0) {
+              socSpentLine += ' <span style="color:var(--green);font-size:10px;font-weight:700;">incl. ' + fmt(data.foodToSocialReallocation) + ' borrowed</span>';
+            }
+            document.getElementById('socialBudgetSpent').innerHTML = socSpentLine;
+            renderSocialStackedBar(data.socialBreakdown, socEffectiveBase, socSpent);
+
+            var shoppingCard = document.getElementById('shopping-budget-card');
+            if (shoppingCard) {
+              if (data.shoppingBudgetBase > 0) {
+                shoppingCard.style.display = '';
+                setBudgetCard({remaining:'shoppingBudget', of:'shoppingBudgetOf', bar:'shoppingBudgetBar', spent:'shoppingBudgetSpent'}, data.shoppingBudget, data.shoppingBudgetBase, data.foodToShoppingReallocation);
+              } else {
+                shoppingCard.style.display = 'none';
+              }
+            }
+
+            document.getElementById('foodDailyBudget').textContent = fmt(data.foodDailyBudget);
+            document.getElementById('foodTodaySpend').textContent  = fmt(data.foodTodaySpend);
+            var el = document.getElementById('foodDailyRemaining');
+            el.textContent = fmt(data.foodDailyRemaining);
+            el.className = 'food-daily-value ' + (data.foodDailyRemaining >= 0 ? 'positive' : 'negative');
+            var dpct = data.foodDailyBudget > 0 ? Math.min((data.foodTodaySpend / data.foodDailyBudget) * 100, 100) : 0;
+            document.getElementById('foodDailyBar').style.width = dpct + '%';
+
+            var alreadyMoved = data.foodToSocialReallocation || 0;
+            var available = data.unspentFoodPastDays || 0;
+            var foodRemaining = data.foodBudgetRemaining || 0;
+
+            document.getElementById('borrowFoodRemaining').textContent = fmt(foodRemaining);
+            document.getElementById('borrowAlreadyMoved').textContent = fmt(alreadyMoved);
+            document.getElementById('unspentAmount').textContent = fmt(available);
+            document.getElementById('borrow-buttons').style.display = (available > 0.5) ? 'flex' : 'none';
+            if (available <= 0.5 && foodRemaining <= 0.5) {
+              document.getElementById('borrow-buttons').style.display = 'none';
+            }
+            var doneMsg = document.getElementById('borrow-done-msg');
+            if (alreadyMoved > 0) {
+              doneMsg.innerHTML = '✓ ' + fmt(alreadyMoved) + ' already moved to Social 🎉';
+              doneMsg.style.display = 'block';
+            } else {
+              doneMsg.style.display = 'none';
+            }
+
+            document.getElementById('calActual').textContent  = Math.round(data.caloriesActual);
+            document.getElementById('calGoal').textContent    = Math.round(data.caloriesGoal);
+            document.getElementById('proActual').textContent  = Math.round(data.proteinActual);
+            document.getElementById('proGoal').textContent    = Math.round(data.proteinGoal);
+            document.getElementById('carbActual').textContent = Math.round(data.carbsActual);
+            document.getElementById('carbGoal').textContent   = Math.round(data.carbsGoal);
+            document.getElementById('fatActual').textContent  = Math.round(data.fatActual);
+            document.getElementById('fatGoal').textContent    = Math.round(data.fatGoal);
+            setBar('calBar','calPct',   data.caloriesActual, data.caloriesGoal);
+            setBar('proBar','proPct',   data.proteinActual,  data.proteinGoal);
+            setBar('carbBar','carbPct', data.carbsActual,    data.carbsGoal);
+            setBar('fatBar','fatPct',   data.fatActual,      data.fatGoal);
+
+            var now = new Date();
+            document.getElementById('lastUpdated').textContent = 'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('loading-overlay').style.display = 'none';
+          })
+          .catch(function() {
+            document.getElementById('loading-overlay').style.display = 'none';
+          });
+      }
+
+      function setFoodFilter(f) {
+        _foodFilter = f;
+        document.getElementById('food-filter-day').classList.toggle('active', f === 'day');
+        document.getElementById('food-filter-month').classList.toggle('active', f === 'month');
+        document.getElementById('food-date-picker').style.display  = f === 'day'   ? '' : 'none';
+        document.getElementById('food-month-picker').style.display = f === 'month' ? '' : 'none';
+        renderFood();
+      }
+
+      function loadFood(bust) {
+        document.getElementById('food-list').innerHTML = '<div class="tab-loading">Loading...</div>';
+        fetch('/api/food' + (bust ? '?refresh=1' : ''))
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            _foodData = data || [];
+            var picker = document.getElementById('food-date-picker');
+            if (!picker.value) picker.value = todayStr();
+            var mpicker = document.getElementById('food-month-picker');
+            if (!mpicker.value) mpicker.value = thisMonthStr();
+            renderFood();
+          })
+          .catch(function() {
+            document.getElementById('food-list').innerHTML = '<div class="empty-state">Failed to load food data.</div>';
+          });
+      }
+
+      function renderFood() {
+        if (!_foodData) return;
+        var list = document.getElementById('food-list');
+        var filtered;
+        if (_foodFilter === 'day') {
+          var sel = document.getElementById('food-date-picker').value || todayStr();
+          filtered = _foodData.filter(function(r){ return r.date === sel; });
+          if (!filtered.length) { list.innerHTML = '<div class="empty-state">No food entries for ' + fmtDateLabel(sel) + '.</div>'; return; }
+          list.innerHTML = buildFoodDaySummary(filtered) + filtered.map(buildFoodCard).join('');
+        } else {
+          var selM = document.getElementById('food-month-picker').value || thisMonthStr();
+          filtered = _foodData.filter(function(r){ return r.date && r.date.substring(0,7) === selM; });
+          if (!filtered.length) { list.innerHTML = '<div class="empty-state">No food entries for ' + fmtMonthLabel(selM) + '.</div>'; return; }
+          var grouped = groupBy(filtered, function(r){ return r.date; });
+          var html = '';
+          grouped.keys.sort().reverse().forEach(function(date) {
+            var rows = grouped.map[date];
+            html += '<div class="day-group">';
+            html += '<div class="day-header"><span>' + fmtDateLabel(date) + '</span><span class="day-total">' + Math.round(rows.reduce(function(s,r){ return s+r.calories; },0)) + ' kcal</span></div>';
+            html += buildFoodDaySummary(rows);
+            html += rows.map(buildFoodCard).join('');
+            html += '</div>';
+          });
+          list.innerHTML = html;
+        }
+      }
+
+      function buildFoodDaySummary(rows) {
+        var cal  = Math.round(rows.reduce(function(s,r){ return s+r.calories;},0));
+        var pro  = Math.round(rows.reduce(function(s,r){ return s+r.protein;},0));
+        var carb = Math.round(rows.reduce(function(s,r){ return s+r.carbs;},0));
+        var fat  = Math.round(rows.reduce(function(s,r){ return s+r.fat;},0));
+        return '<div class="day-macro-summary">' +
+          '<span class="dms-pill pill-cal">' + cal + ' kcal</span>' +
+          '<span class="dms-pill pill-pro">P ' + pro + 'g</span>' +
+          '<span class="dms-pill pill-carb">C ' + carb + 'g</span>' +
+          '<span class="dms-pill pill-fat">F ' + fat + 'g</span>' +
+          '</div>';
+      }
+
+      function buildFoodCard(r) {
+        var time = r.dateTime ? r.dateTime.substring(11,16) : '';
+        return '<div class="entry-card">' +
+          '<div class="entry-left">' +
+            '<div class="entry-name">' + esc(r.item) + '</div>' +
+            '<div class="macro-pills">' +
+              '<span class="macro-pill pill-pro">P ' + r.protein + 'g</span>' +
+              '<span class="macro-pill pill-carb">C ' + r.carbs + 'g</span>' +
+              '<span class="macro-pill pill-fat">F ' + r.fat + 'g</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="entry-right">' +
+            '<div class="entry-value">' + Math.round(r.calories) + ' kcal</div>' +
+            '<div class="entry-sub">' + time + '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function setExpFilter(f) {
+        _expFilter = f;
+        document.getElementById('exp-filter-day').classList.toggle('active', f === 'day');
+        document.getElementById('exp-filter-month').classList.toggle('active', f === 'month');
+        document.getElementById('exp-date-picker').style.display  = f === 'day'   ? '' : 'none';
+        document.getElementById('exp-month-picker').style.display = f === 'month' ? '' : 'none';
+        renderExpenses();
+      }
+
+      function loadExpenses(bust) {
+        document.getElementById('exp-list').innerHTML = '<div class="tab-loading">Loading...</div>';
+        fetch('/api/expenses' + (bust ? '?refresh=1' : ''))
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            _expData = data || [];
+            var picker = document.getElementById('exp-date-picker');
+            if (!picker.value) picker.value = todayStr();
+            var mpicker = document.getElementById('exp-month-picker');
+            if (!mpicker.value) mpicker.value = thisMonthStr();
+            renderExpenses();
+          })
+          .catch(function() {
+            document.getElementById('exp-list').innerHTML = '<div class="empty-state">Failed to load expenses.</div>';
+          });
+      }
+
+      function renderExpenses() {
+        if (!_expData) return;
+        var list = document.getElementById('exp-list');
+        var filtered;
+        if (_expFilter === 'day') {
+          var sel = document.getElementById('exp-date-picker').value || todayStr();
+          filtered = _expData.filter(function(r){ return r.dateTime && r.dateTime.substring(0,10) === sel; });
+          if (!filtered.length) { list.innerHTML = '<div class="empty-state">No expenses for ' + fmtDateLabel(sel) + '.</div>'; return; }
+
+          var categoryTotals = {};
+          filtered.forEach(function(r) {
+            var cat = r.category || 'Other';
+            categoryTotals[cat] = (categoryTotals[cat] || 0) + r.amount;
+          });
+
+          var total = filtered.reduce(function(s,r){ return s+r.amount; }, 0);
+          var summaryHtml = '<div class="day-macro-summary">';
+          summaryHtml += '<span class="dms-pill" style="background:#ffe8ea;color:#ff5e6c;">Total ' + fmt(total) + '</span>';
+          Object.keys(categoryTotals).sort().forEach(function(cat) {
+            var color = cat.toLowerCase() === 'food' ? '#e0faf4;color:#00c896' :
+                        cat.toLowerCase() === 'petrol' || cat.toLowerCase() === 'motorcycle' ? '#fff8e1;color:#f39c12' :
+                        '#ede9ff;color:#6c63ff';
+            summaryHtml += '<span class="dms-pill" style="background:' + color + '">' + esc(cat) + ' ' + fmt(categoryTotals[cat]) + '</span>';
+          });
+          summaryHtml += '</div>';
+          list.innerHTML = summaryHtml + filtered.map(buildExpCard).join('');
+        } else {
+          var selM = document.getElementById('exp-month-picker').value || thisMonthStr();
+          filtered = _expData.filter(function(r){ return r.dateTime && r.dateTime.substring(0,7) === selM; });
+          if (!filtered.length) { list.innerHTML = '<div class="empty-state">No expenses for ' + fmtMonthLabel(selM) + '.</div>'; return; }
+
+          var monthCategoryTotals = {};
+          filtered.forEach(function(r) {
+            var cat = r.category || 'Other';
+            monthCategoryTotals[cat] = (monthCategoryTotals[cat] || 0) + r.amount;
+          });
+
+          var monthTotal = filtered.reduce(function(s,r){ return s+r.amount; }, 0);
+          var monthSummaryHtml = '<div class="day-macro-summary">';
+          monthSummaryHtml += '<span class="dms-pill" style="background:#ffe8ea;color:#ff5e6c;">Total ' + fmt(monthTotal) + '</span>';
+          Object.keys(monthCategoryTotals).sort().forEach(function(cat) {
+            var color = cat.toLowerCase() === 'food' ? '#e0faf4;color:#00c896' :
+                        cat.toLowerCase() === 'petrol' || cat.toLowerCase() === 'motorcycle' ? '#fff8e1;color:#f39c12' :
+                        '#ede9ff;color:#6c63ff';
+            monthSummaryHtml += '<span class="dms-pill" style="background:' + color + '">' + esc(cat) + ' ' + fmt(monthCategoryTotals[cat]) + '</span>';
+          });
+          monthSummaryHtml += '</div>';
+
+          var grouped = groupBy(filtered, function(r){ return r.dateTime.substring(0,10); });
+          var html = monthSummaryHtml;
+          grouped.keys.sort().reverse().forEach(function(date) {
+            var rows = grouped.map[date];
+            var dayTotal = rows.reduce(function(s,r){ return s+r.amount; }, 0);
+
+            var dayCategoryTotals = {};
+            rows.forEach(function(r) {
+              var cat = r.category || 'Other';
+              dayCategoryTotals[cat] = (dayCategoryTotals[cat] || 0) + r.amount;
+            });
+
+            html += '<div class="day-group">';
+            html += '<div class="day-header"><span>' + fmtDateLabel(date) + '</span><span class="day-total">' + fmt(dayTotal) + '</span></div>';
+
+            var daySummaryHtml = '<div class="day-macro-summary" style="margin-bottom:8px;">';
+            Object.keys(dayCategoryTotals).sort().forEach(function(cat) {
+              var color = cat.toLowerCase() === 'food' ? '#e0faf4;color:#00c896' :
+                          cat.toLowerCase() === 'petrol' || cat.toLowerCase() === 'motorcycle' ? '#fff8e1;color:#f39c12' :
+                          '#ede9ff;color:#6c63ff';
+              daySummaryHtml += '<span class="dms-pill" style="background:' + color + '">' + esc(cat) + ' ' + fmt(dayCategoryTotals[cat]) + '</span>';
+            });
+            daySummaryHtml += '</div>';
+
+            html += daySummaryHtml;
+            html += rows.map(buildExpCard).join('');
+            html += '</div>';
+          });
+          list.innerHTML = html;
+        }
+      }
+
+      function buildExpCard(r) {
+        var time = r.dateTime ? r.dateTime.substring(11,16) : '';
+        return '<div class="entry-card">' +
+          '<div class="entry-left">' +
+            '<div class="entry-name">' + esc(r.item) + '</div>' +
+            '<div class="entry-meta">' + esc(r.paymentMethod) + (r.details ? ' · ' + esc(r.details) : '') + '</div>' +
+            '<span class="cat-badge">' + esc(r.category) + '</span>' +
+          '</div>' +
+          '<div class="entry-right">' +
+            '<div class="entry-value">' + fmt(r.amount) + '</div>' +
+            '<div class="entry-sub">' + time + '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      var _socBreakdown = {};
+      var _socBase = 0;
+      var _socSpent = 0;
+
+      var _catColors = [
+        '#6c63ff','#e84393','#00c896','#4e9af1','#ffd32a','#00d2d3','#e17055','#fd79a8','#a29bfe','#55efc4'
+      ];
+      function catColor(cat, idx) {
+        return _catColors[idx % _catColors.length];
+      }
+
+      function renderSocialStackedBar(breakdown, base, spent) {
+        _socBreakdown = breakdown || {};
+        _socBase = base;
+        _socSpent = spent;
+
+        var bar = document.getElementById('socialStackedBar');
+        var bdDiv = document.getElementById('socialBreakdown');
+        var cats = Object.keys(_socBreakdown).sort(function(a,b){ return _socBreakdown[b]-_socBreakdown[a]; });
+        var total = base > 0 ? base : 1;
+
+        var barHtml = '';
+        var bdHtml = '';
+        cats.forEach(function(cat, i) {
+          var amt = _socBreakdown[cat];
+          var pct = Math.min(amt / total * 100, 100);
+          var col = catColor(cat, i);
+          barHtml += '<div class="bc-stacked-seg" style="width:' + pct + '%;background:' + col + ';"></div>';
+          bdHtml += '<div class="sbd-row">' +
+            '<span class="sbd-label"><span class="sbd-dot" style="background:' + col + '"></span>' + esc(cat) + '</span>' +
+            '<span class="sbd-amount">' + fmt(amt) + '</span>' +
+            '</div>';
+        });
+        bar.innerHTML = barHtml;
+        bdDiv.innerHTML = bdHtml;
+      }
+
+      function refreshAll() {
+        _foodData = null;
+        _expData = null;
+        _fitData = null;
+        loadDashboard(true);
+        var tab = document.querySelector('.tab-page.active');
+        if (tab && tab.id === 'tab-food') loadFood(true);
+        if (tab && tab.id === 'tab-expenses') loadExpenses(true);
+        if (tab && tab.id === 'tab-fitness') loadFitness(true);
+      }
+
+      function toggleSocialBreakdown() {
+        var bd = document.getElementById('socialBreakdown');
+        var hint = document.querySelector('.bc-tap-hint');
+        var open = bd.classList.toggle('open');
+        if (hint) hint.textContent = open ? 'Tap to hide ▴' : 'Tap to see breakdown ▾';
+      }
+
+      function submitFoodLog() {
+        var item = document.getElementById('food-item').value.trim();
+        var calories = parseFloat(document.getElementById('food-calories').value);
+        if (!item || !calories) { alert('Please fill in item name and calories.'); return; }
+        document.getElementById('loading-overlay').style.display = 'flex';
+        fetch('/api/food', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            item: item,
+            calories: calories,
+            protein: parseFloat(document.getElementById('food-protein').value) || 0,
+            carbs: parseFloat(document.getElementById('food-carbs').value) || 0,
+            fat: parseFloat(document.getElementById('food-fat').value) || 0,
+            type: document.getElementById('food-type').value,
+            note: document.getElementById('food-note').value.trim()
+          })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+          if (result.error) {
+            alert('Error: ' + result.error);
+          } else {
+            document.getElementById('food-log-form').style.display = 'none';
+            document.getElementById('food-item').value = '';
+            document.getElementById('food-calories').value = '';
+            document.getElementById('food-protein').value = '';
+            document.getElementById('food-carbs').value = '';
+            document.getElementById('food-fat').value = '';
+            document.getElementById('food-note').value = '';
+            loadDashboard(true);
+            if (_foodData) renderFood();
+          }
+        })
+        .catch(function() {
+          alert('Failed to save food log.');
+        })
+        .finally(function() {
+          document.getElementById('loading-overlay').style.display = 'none';
+        });
+      }
+
+      function submitExpenseLog() {
+        var item = document.getElementById('exp-item').value.trim();
+        var amount = parseFloat(document.getElementById('exp-amount').value);
+        if (!item || !amount) { alert('Please fill in item name and amount.'); return; }
+        document.getElementById('loading-overlay').style.display = 'flex';
+        fetch('/api/expenses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            item: item,
+            amount: amount,
+            paymentMethod: document.getElementById('exp-payment').value,
+            category: document.getElementById('exp-category').value.trim(),
+            details: document.getElementById('exp-details').value.trim()
+          })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+          if (result.error) {
+            alert('Error: ' + result.error);
+          } else {
+            document.getElementById('exp-log-form').style.display = 'none';
+            document.getElementById('exp-item').value = '';
+            document.getElementById('exp-amount').value = '';
+            document.getElementById('exp-category').value = '';
+            document.getElementById('exp-details').value = '';
+            loadDashboard(true);
+            if (_expData) renderExpenses();
+          }
+        })
+        .catch(function() {
+          alert('Failed to save expense.');
+        })
+        .finally(function() {
+          document.getElementById('loading-overlay').style.display = 'none';
+        });
+      }
+
+      function submitWorkoutLog() {
+        var exercise = document.getElementById('fit-exercise').value.trim();
+        if (!exercise) { alert('Please enter exercise name.'); return; }
+        document.getElementById('loading-overlay').style.display = 'flex';
+        fetch('/api/fitness', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'workout',
+            exercise: exercise,
+            sets: document.getElementById('fit-sets').value.trim(),
+            reps: document.getElementById('fit-reps').value.trim(),
+            weight: document.getElementById('fit-weight').value.trim()
+          })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+          if (result.error) {
+            alert('Error: ' + result.error);
+          } else {
+            document.getElementById('fit-workout-form').style.display = 'none';
+            document.getElementById('fit-exercise').value = '';
+            document.getElementById('fit-sets').value = '';
+            document.getElementById('fit-reps').value = '';
+            document.getElementById('fit-weight').value = '';
+            loadFitness(true);
+          }
+        })
+        .catch(function() {
+          alert('Failed to save workout.');
+        })
+        .finally(function() {
+          document.getElementById('loading-overlay').style.display = 'none';
+        });
+      }
+
+      function submitWeightLog() {
+        var weight = parseFloat(document.getElementById('fit-body-weight').value);
+        if (!weight) { alert('Please enter weight.'); return; }
+        document.getElementById('loading-overlay').style.display = 'flex';
+        fetch('/api/fitness', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'bodycomp',
+            weight: weight,
+            height: parseFloat(document.getElementById('fit-body-height').value) || 0
+          })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+          if (result.error) {
+            alert('Error: ' + result.error);
+          } else {
+            document.getElementById('fit-weight-form').style.display = 'none';
+            document.getElementById('fit-body-weight').value = '';
+            document.getElementById('fit-height').value = '';
+            loadFitness(true);
+          }
+        })
+        .catch(function() {
+          alert('Failed to save weight.');
+        })
+        .finally(function() {
+          document.getElementById('loading-overlay').style.display = 'none';
+        });
+      }
+
+      function reallocateTo(target) {
+        if (!window._dashboardData) return;
+        var available = window._dashboardData.unspentFoodPastDays || 0;
+        if (available <= 0.5) return;
+        var alreadyMoved = window._dashboardData.foodToSocialReallocation || 0;
+        var newTotal = alreadyMoved + available;
+        if (!confirm('Move ' + fmt(available) + ' from unspent food budget to Social? (Total moved this month: ' + fmt(newTotal) + ')')) return;
+
+        document.getElementById('loading-overlay').style.display = 'flex';
+        fetch('/api/reallocate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: newTotal, target: target })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+          if (result.error) {
+            alert('Error: ' + result.error);
+            document.getElementById('loading-overlay').style.display = 'none';
+          } else {
+            loadDashboard(true);
+          }
+        })
+        .catch(function() {
+          alert('Failed to save reallocation');
+          document.getElementById('loading-overlay').style.display = 'none';
+        });
+      }
+
+      function loadFitness(bust) {
+        document.getElementById('fit-list-log').innerHTML = '<div class="tab-loading">Loading...</div>';
+        fetch('/api/fitness' + (bust ? '?refresh=1' : ''))
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            _fitData = data;
+            if (data.latestBodyComp) {
+              document.getElementById('fit-weight').textContent = data.latestBodyComp.weight;
+              document.getElementById('fit-height').textContent = data.latestBodyComp.height;
+              document.getElementById('fit-body-date').textContent = fmtDateLabel(data.latestBodyComp.date);
+            }
+            renderFitness();
+          })
+          .catch(function() {
+            document.getElementById('fit-list-log').innerHTML = '<div class="empty-state">Failed to load fitness data.</div>';
+          });
+      }
+
+      function setFitFilter(f) {
+        _fitFilter = f;
+        document.getElementById('fit-filter-log').classList.toggle('active', f === 'log');
+        document.getElementById('fit-filter-routine').classList.toggle('active', f === 'routine');
+        document.getElementById('fit-list-log').style.display = f === 'log' ? 'block' : 'none';
+        document.getElementById('fit-list-routine').style.display = f === 'routine' ? 'block' : 'none';
+        renderFitness();
+      }
+
+      function renderFitness() {
+        if (!_fitData) return;
+
+        var logList = document.getElementById('fit-list-log');
+        if (!_fitData.workoutLog || _fitData.workoutLog.length === 0) {
+          logList.innerHTML = '<div class="empty-state">No workouts logged yet.</div>';
+        } else {
+          var html = '';
+          var logByDay = groupBy(_fitData.workoutLog, function(e){ return e.dateTime ? e.dateTime.substring(0,10) : 'Unknown'; });
+          logByDay.keys.forEach(function(d) {
+            html += '<div class="day-group">';
+            html += '<div class="day-header"><span>' + (d==='Unknown'?'':fmtDateLabel(d)) + '</span></div>';
+            logByDay.map[d].forEach(function(e) {
+              html += '<div class="entry-card">';
+              html += '<div class="entry-left">';
+              html += '<div class="entry-name">' + esc(e.exercise) + '</div>';
+              html += '<div class="entry-meta">' + esc(e.sets) + ' sets × ' + esc(e.reps) + ' reps</div>';
+              html += '</div>';
+              html += '<div class="entry-right">';
+              html += '<div class="entry-value">' + esc(e.weight) + ' kg</div>';
+              html += '<div class="entry-sub">' + (e.dateTime ? e.dateTime.substring(11,16) : '') + '</div>';
+              html += '</div>';
+              html += '</div>';
+            });
+            html += '</div>';
+          });
+          logList.innerHTML = html;
+        }
+
+        var routineList = document.getElementById('fit-list-routine');
+        var html = '';
+
+        if (_isEditingRoutine) {
+          html += '<div style="display:flex;justify-content:space-between;margin-bottom:12px;">';
+          html += '<button onclick="addRoutineRow()" style="background:var(--green);color:white;border:none;padding:8px 12px;border-radius:8px;font-weight:600;cursor:pointer;">➕ Add Exercise</button>';
+          html += '<div><button onclick="toggleEditRoutine()" style="background:#eee;color:#333;border:none;padding:8px 12px;border-radius:8px;font-weight:600;cursor:pointer;margin-right:8px;">Cancel</button>';
+          html += '<button onclick="saveRoutine()" style="background:var(--primary);color:white;border:none;padding:8px 12px;border-radius:8px;font-weight:600;cursor:pointer;">💾 Save</button></div>';
+          html += '</div>';
+
+          if (!_fitData.workoutRoutine) _fitData.workoutRoutine = [];
+          _fitData.workoutRoutine.forEach(function(e, idx) {
+            html += '<div class="card routine-edit-row" style="margin-bottom:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+            html += '<input type="text" class="filter-input i-day" value="'+esc(e.day)+'" placeholder="Day (e.g. Push)" style="grid-column:span 2">';
+            html += '<input type="text" class="filter-input i-ex" value="'+esc(e.exercise)+'" placeholder="Exercise Name" style="grid-column:span 2">';
+            html += '<input type="text" class="filter-input i-sets" value="'+esc(e.sets)+'" placeholder="Sets">';
+            html += '<input type="text" class="filter-input i-reps" value="'+esc(e.reps)+'" placeholder="Reps">';
+            html += '<input type="text" class="filter-input i-wt" value="'+esc(e.weight)+'" placeholder="Weight (e.g. 20kg)" style="grid-column:span 2">';
+            html += '<button onclick="deleteRoutineRow('+idx+')" style="grid-column:span 2;background:#ffe8ea;color:var(--red);border:none;padding:8px;border-radius:8px;cursor:pointer;font-weight:600;">🗑️ Remove Exercise</button>';
+            html += '</div>';
+          });
+          routineList.innerHTML = html;
+        } else {
+          html += '<div style="text-align:right;margin-bottom:12px;"><button onclick="toggleEditRoutine()" style="background:var(--primary-light);color:var(--primary);border:none;padding:6px 12px;border-radius:8px;font-weight:600;cursor:pointer;">✏️ Edit Routine</button></div>';
+
+          if (!_fitData.workoutRoutine || _fitData.workoutRoutine.length === 0) {
+            html += '<div class="empty-state">No routine data found.</div>';
+          } else {
+            var routineByDay = groupBy(_fitData.workoutRoutine, function(e){ return e.day || 'Other'; });
+            var order = ['Push', 'Pull', 'Legs'];
+            var keys = routineByDay.keys.sort(function(a, b) {
+              var ia = order.indexOf(a); var ib = order.indexOf(b);
+              if (ia === -1 && ib === -1) return a.localeCompare(b);
+              if (ia === -1) return 1; if (ib === -1) return -1;
+              return ia - ib;
+            });
+            keys.forEach(function(d) {
+              html += '<div class="day-group">';
+              html += '<div class="day-header" style="color:var(--primary); font-size:14px;"><span>' + esc(d) + ' Day</span></div>';
+              routineByDay.map[d].forEach(function(e) {
+                var ytLink = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(e.exercise + ' exercise perfect form demonstration');
+                html += '<div class="entry-card">';
+                html += '<div class="entry-left">';
+                html += '<div class="entry-name">' + esc(e.exercise) + '</div>';
+                html += '<div class="entry-meta">' + esc(e.sets) + ' sets × ' + esc(e.reps) + ' reps</div>';
+                html += '<a href="'+ytLink+'" target="_blank" style="display:inline-block;margin-top:6px;font-size:11px;color:var(--primary);text-decoration:none;background:var(--primary-light);padding:4px 8px;border-radius:4px;font-weight:600;">🎥 View Form</a>';
+                html += '</div>';
+                html += '<div class="entry-right">';
+                html += '<div class="entry-value">' + esc(e.weight) + (e.weight && e.weight.toLowerCase() !== 'bw' && !e.weight.toLowerCase().includes('kg') && !e.weight.toLowerCase().includes('lbs') ? ' kg' : '') + '</div>';
+                html += '<div class="entry-sub">Target</div>';
+                html += '</div>';
+                html += '</div>';
+              });
+              html += '</div>';
+            });
+          }
+          routineList.innerHTML = html;
+        }
+      }
+
+      function toggleEditRoutine() {
+        _isEditingRoutine = !_isEditingRoutine;
+        renderFitness();
+      }
+
+      function addRoutineRow() {
+        if (!_fitData.workoutRoutine) _fitData.workoutRoutine = [];
+        _fitData.workoutRoutine.push({ day: 'Push', exercise: '', sets: '3', reps: '10', weight: 'BW' });
+        renderFitness();
+      }
+
+      function deleteRoutineRow(idx) {
+        _fitData.workoutRoutine.splice(idx, 1);
+        renderFitness();
+      }
+
+      function saveRoutine() {
+        var inputs = document.querySelectorAll('.routine-edit-row');
+        var newRoutine = [];
+        inputs.forEach(function(row) {
+          var d = row.querySelector('.i-day').value.trim();
+          var ex = row.querySelector('.i-ex').value.trim();
+          if (ex) {
+            newRoutine.push({
+              day: d,
+              exercise: ex,
+              sets: row.querySelector('.i-sets').value.trim(),
+              reps: row.querySelector('.i-reps').value.trim(),
+              weight: row.querySelector('.i-wt').value.trim()
+            });
+          }
+        });
+
+        document.getElementById('loading-overlay').style.display = 'flex';
+        fetch('/api/routine', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ routine: newRoutine })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res.error) {
+            alert('Error saving: ' + res.error);
+          } else {
+            _isEditingRoutine = false;
+            loadFitness();
+          }
+        })
+        .catch(function() {
+          alert('Failed to connect to server.');
+        })
+        .finally(function() {
+          document.getElementById('loading-overlay').style.display = 'none';
+        });
+      }
+
+      // ── Quest Board ───────────────────────────────────────────────────────
+      var _questData = null;
+
+      function loadQuests(bust) {
+        document.getElementById('quest-board').innerHTML = '<div class="tab-loading">Loading...</div>';
+        fetch('/api/goals' + (bust ? '?refresh=1' : ''))
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            _questData = data;
+            renderQuestBoard();
+          })
+          .catch(function() {
+            document.getElementById('quest-board').innerHTML = '<div class="empty-state">Failed to load quests.</div>';
+          });
+      }
+
+      function renderQuestBoard() {
+        if (!_questData) return;
+        var goals = _questData.goals || [];
+        var dailyGoals = goals.filter(function(g) { return g.type === 'Daily' && g.status === 'Active'; });
+        var otherGoals = goals.filter(function(g) { return g.type !== 'Daily' && g.status === 'Active'; });
+        var clearedCount = dailyGoals.filter(function(g) { return g.todayCleared; }).length;
+
+        // Daily quests grid
+        var board = document.getElementById('quest-board');
+        var empty = document.getElementById('quest-empty');
+        var stats = document.getElementById('quest-stats');
+
+        if (dailyGoals.length === 0) {
+          board.style.display = 'none';
+          empty.style.display = 'block';
+          stats.style.display = 'none';
+        } else {
+          board.style.display = 'grid';
+          empty.style.display = 'none';
+          stats.style.display = 'block';
+          var html = '';
+          dailyGoals.forEach(function(g) {
+            var cleared = g.todayCleared;
+            var pct = g.target ? Math.min(((g.todayValue || 0) / parseFloat(g.target)) * 100, 100) : 0;
+            html += '<div style="position:relative;border-radius:16px;overflow:hidden;' + (cleared ? 'opacity:0.4;' : '') + '">';
+            html += '<div style="background:' + (cleared ? '#e0faf4' : 'var(--card-bg)') + ';' +
+              'border-radius:16px;padding:16px;box-shadow:var(--shadow);height:100%;"' +
+              (cleared ? '' : ' onclick="clearQuest(\'' + g.id + '\',\'' + (g.target||'') + '\')" style="cursor:pointer;">') +
+              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+            if (cleared) {
+              html += '<div style="width:24px;height:24px;border-radius:8px;background:var(--green);display:flex;align-items:center;justify-content:center;">';
+              html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+              html += '</div>';
+            } else {
+              html += '<div style="width:24px;height:24px;border-radius:8px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;">';
+              html += '<div style="width:12px;height:12px;border-radius:4px;background:var(--primary);"></div>';
+              html += '</div>';
+            }
+            html += '<span style="font-size:13px;font-weight:700;color:' + (cleared ? 'var(--green)' : 'var(--text-main)') + '">';
+            html += esc(g.title) + '</span>';
+            html += '</div>';
+            if (!cleared && g.target) {
+              html += '<div style="height:6px;background:#f0f2f8;border-radius:3px;overflow:hidden;margin-bottom:6px;">';
+              html += '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--green),#00e5b0);border-radius:3px;transition:width 0.5s;"></div>';
+              html += '</div>';
+            }
+            html += '<div style="font-size:11px;color:var(--text-sub);font-weight:600;">';
+            if (!cleared && g.target) {
+              html += (g.todayValue || 0) + '/' + g.target + ' ' + (g.unit || '');
+            } else if (cleared) {
+              html += '✅ Cleared!';
+            }
+            html += '</div>';
+            html += '</div></div>';
+          });
+          board.innerHTML = html;
+
+          // Stats
+          document.getElementById('quest-cleared-count').textContent = clearedCount;
+          var total = dailyGoals.length;
+          var pct = total > 0 ? (clearedCount / total) * 100 : 0;
+          document.getElementById('quest-progress-bar').style.width = pct + '%';
+        }
+
+        // Quest board (non-daily)
+        var list = document.getElementById('quest-board-list');
+        var boardEmpty = document.getElementById('quest-board-empty');
+        if (otherGoals.length === 0) {
+          list.style.display = 'none';
+          boardEmpty.style.display = 'block';
+        } else {
+          list.style.display = 'flex';
+          boardEmpty.style.display = 'none';
+          var html = '';
+          otherGoals.forEach(function(g) {
+            var catColors = {Health:'#00c896',Finance:'#ffd32a',Learning:'#4e9af1','Side Project':'#a78bfa',Relationship:'#e84393',Other:'#8b8fa8'};
+            var color = catColors[g.category] || '#8b8fa8';
+            html += '<div class="entry-card" style="border-left:4px solid ' + color + ';">';
+            html += '<div class="entry-left">';
+            html += '<div class="entry-name">' + esc(g.title) + '</div>';
+            html += '<div class="entry-meta">' + esc(g.category) + ' · ' + esc(g.type) + '</div>';
+            if (g.target) {
+              html += '<div style="font-size:12px;font-weight:700;color:var(--text-main);margin-top:4px;">' + esc(g.target) + ' ' + esc(g.unit) + '</div>';
+            }
+            html += '</div>';
+            html += '<div class="entry-right">';
+            html += '<span class="cat-badge">' + esc(g.status) + '</span>';
+            html += '</div>';
+            html += '</div>';
+          });
+          list.innerHTML = html;
+        }
+      }
+
+      function clearQuest(id, target) {
+        if (!target) return;
+        document.getElementById('loading-overlay').style.display = 'flex';
+        fetch('/api/goals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'clear', id: id, value: target, note: 'Cleared!' })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+          if (result.error) {
+            alert('Error: ' + result.error);
+          } else {
+            loadQuests(true);
+          }
+        })
+        .catch(function() {
+          alert('Failed to clear quest.');
+        })
+        .finally(function() {
+          document.getElementById('loading-overlay').style.display = 'none';
+        });
+      }
+
+      function submitQuest() {
+        var title = document.getElementById('quest-title').value.trim();
+        if (!title) { alert('Please enter a quest title.'); return; }
+        document.getElementById('loading-overlay').style.display = 'flex';
+        fetch('/api/goals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'create',
+            title: title,
+            type: document.getElementById('quest-type').value,
+            category: document.getElementById('quest-category').value,
+            target: document.getElementById('quest-target').value.trim(),
+            unit: document.getElementById('quest-unit').value.trim()
+          })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+          if (result.error) {
+            alert('Error: ' + result.error);
+          } else {
+            document.getElementById('quest-create-form').style.display = 'none';
+            document.getElementById('quest-title').value = '';
+            document.getElementById('quest-target').value = '';
+            document.getElementById('quest-unit').value = '';
+            loadQuests(true);
+          }
+        })
+        .catch(function() {
+          alert('Failed to create quest.');
+        })
+        .finally(function() {
+          document.getElementById('loading-overlay').style.display = 'none';
+        });
+      }
+
+      // Pull-to-refresh
+      var startY = 0;
+      var isPulling = false;
+      document.addEventListener('touchstart', function(e) {
+        if (window.scrollY === 0) { startY = e.touches[0].pageY; isPulling = true; }
+      });
+      document.addEventListener('touchmove', function(e) {
+        if (!isPulling) return;
+        if (e.touches[0].pageY - startY > 80) { isPulling = false; refreshAll(); }
+      });
+      document.addEventListener('touchend', function() { isPulling = false; });
+
+      // Service Worker Unregistration (disabled to avoid auth conflicts)
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
