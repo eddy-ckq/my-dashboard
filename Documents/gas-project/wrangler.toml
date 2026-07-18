@@ -1,0 +1,11 @@
+name = "my-dashboard"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "public"
+
+[[routes]]
+pattern = "eddyckq-telebot.godeeper.sg/*"
+zone_name = "godeeper.sg"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "85caa0ffaeef4068a596167b2f22e9f8"
